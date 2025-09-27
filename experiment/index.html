@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Eye-tracking Experiment</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="images/eye-scan.png">
+</head>
+<body>
+<div class="container">
+
+    <!-- Intro Page -->
+    <section id="intro-section" class="card">
+        <h2>Welcome to the Eye-Tracking Authentication Study</h2>
+        <p>Please scan the QR code below to complete the Google Form with your participant information before continuing.</p>
+        <img src="images/qrcode.png" alt="Google Form QR Code" class="qr-code" />
+        <button class="btn" id="introNext">Next</button>
+    </section>
+
+    <!-- Familiarization Page -->
+    <section id="familiarization-section" class="card hidden">
+        <h2>Familiarization Task</h2>
+        <p class="muted small">Please type the paragraph below exactly as shown, then press Submit.</p>
+        <div class="paragraph-box" oncopy="return false" oncut="return false" onpaste="return false" oncontextmenu="return false">
+            <p id="demoParagraph">
+                Bring the pan of water to the boil then add 125 gr. of pasta. If you like, or the recipe suggests, salt the water first, or if you prefer, add a splash of olive oil. After about 10 mins of boiling, carefully fish a piece of pasta out of the pan, allow it to cool and taste it!
+            </p>
+        </div>
+        <textarea id="famInput" rows="5" placeholder="Type the paragraph here..."></textarea>
+        <button class="btn" id="famSubmit">Submit</button>
+        <p id="famFeedback" class="muted"></p>
+    </section>
+
+    <!-- Start Experiment Page -->
+    <section id="start-section" class="card hidden">
+    <h2>Experiment Preparation</h2>
+    <p>When you are ready to start the experiment, press the button below.</p>
+    <button class="btn" id="startExperiment">Start Experiment</button>
+    </section>
+
+
+    <!-- Login Page -->
+    <section id="login-section" class="card hidden">
+        <h2>Login Interface</h2>
+        <div class="input-group">
+            <label for="loginEmail">Username</label>
+            <input id="loginEmail" type="text" placeholder="Enter username" autocomplete="off" />
+        </div>
+        <div class="input-group">
+            <label for="loginPassword">Password</label>
+            <div class="password-wrapper">
+                <input id="loginPassword" type="password" placeholder="Enter password" autocomplete="off" />
+                <span id="togglePass" class="toggle-eye">👁️</span>
+            </div>
+        </div>
+        <button class="btn" id="loginBtn">Submit</button>
+        <p id="loginFeedback" class="muted"></p>
+    </section>
+
+    <!-- Experiment End Page -->
+    <section id="end-section" class="card hidden">
+        <h2>You have completed the experiment</h2>
+        <p>Thank you for participating!</p>
+    </section>
+
+</div>
+<script src="script.js"></script>
+</body>
+</html>
