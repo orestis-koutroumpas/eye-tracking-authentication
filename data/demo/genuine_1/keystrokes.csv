@@ -1,35 +1,28 @@
-recording id,timestamp [ns],name,type
-local_1758878041583,3573000000,username:e pressed,recording
-local_1758878041583,3954800000,username:x pressed,recording
-local_1758878041583,4063800000,username:p pressed,recording
-local_1758878041583,4636900000,username:. pressed,recording
-local_1758878041583,5035300000,username:u pressed,recording
-local_1758878041583,5113800000,username:s pressed,recording
-local_1758878041583,5244400000,username:e pressed,recording
-local_1758878041583,5333900000,username:r pressed,recording
-local_1758878041583,6548700000,username:2 pressed,recording
-local_1758878041583,6721600000,username:0 pressed,recording
-local_1758878041583,6796000000,username:2 pressed,recording
-local_1758878041583,7080600000,username:5 pressed,recording
-local_1758878041583,7702300000,username:Tab pressed,recording
-local_1758878041583,8198700000,password:Shift pressed,recording
-local_1758878041583,8325300000,password:A pressed,recording
-local_1758878041583,9062600000,password:o pressed,recording
-local_1758878041583,9551600000,password:4 pressed,recording
-local_1758878041583,10254700000,password:n pressed,recording
-local_1758878041583,10576500000,password:Shift pressed,recording
-local_1758878041583,10668400000,password:F pressed,recording
-local_1758878041583,11201500000,password:Shift pressed,recording
-local_1758878041583,11363800000,password:$ pressed,recording
-local_1758878041583,12032200000,password:Shift pressed,recording
-local_1758878041583,12119200000,password:K pressed,recording
-local_1758878041583,13016800000,password:q pressed,recording
-local_1758878041583,13657600000,password:0 pressed,recording
-local_1758878041583,14062700000,password:Shift pressed,recording
-local_1758878041583,14345800000,password:! pressed,recording
-local_1758878041583,15157200000,password:v pressed,recording
-local_1758878041583,15395500000,password:u pressed,recording
-local_1758878041583,15500400000,password:r pressed,recording
-local_1758878041583,15840300000,password:7 pressed,recording
-local_1758878041583,16628400000,password:Shift pressed,recording
-local_1758878041583,17042300000,password:? pressed,recording
+timestamp [ns],name
+3573000000,e_pressed
+3954800000,x_pressed
+4063800000,p_pressed
+4636900000,._pressed
+5035300000,u_pressed
+5113800000,s_pressed
+5244400000,e_pressed
+5333900000,r_pressed
+6548700000,2_pressed
+6721600000,0_pressed
+6796000000,2_pressed
+7080600000,5_pressed
+8325300000,A_pressed
+9062600000,o_pressed
+9551600000,4-pressed
+10254700000,n_pressed
+10668400000,F_pressed
+11363800000,$_pressed
+12119200000,K_pressed
+13016800000,q_pressed
+13657600000,0_pressed
+14345800000,!_pressed
+15157200000,v_pressed
+15395500000,u_pressed
+15500400000,r_pressed
+15840300000,7_pressed
+17042300000,?_pressed
