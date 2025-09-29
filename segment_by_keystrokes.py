@@ -48,11 +48,7 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
         return
 
     ks = pd.read_csv(ks_path)
-    if "timestamp [ns]" not in ks.columns or "name" not in ks.columns:
-        logging.error("Keystroke file must have 'timestamp [ns]' and 'name' columns.")
-        return
 
-    ks = ks.sort_values("timestamp [ns]").reset_index(drop=True)
     output_dir = data_dir + "/Segmentation"
     os.makedirs(output_dir, exist_ok=True)
 
@@ -64,22 +60,23 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
             continue
 
         df = pd.read_csv(file_path)
-        # detect all timestamp columns
+
         ts_cols = [c for c in df.columns if "timestamp" in c.lower()]
         if not ts_cols:
             logging.warning(f"No timestamp column found in {filename}, skipping.")
             continue
 
-        ts_col = ts_cols[0]  # assume first match
+        ts_col = ts_cols[-1]
         df = df.sort_values(ts_col).reset_index(drop=True)
 
         prev_t = float("-inf")
+        
         for i, row in ks.iterrows():
             current_t = row["timestamp [ns]"]
-            key_name = str(row["name"]).replace(" ", "_").replace(':', '_')
-            if key_name == 'password_?_pressed':
-                key_name = 'password_qm_pressed'
-            key_name += str(i)
+            key_name = str(i+1) + '_' + str(row["name"])
+            if '?' in key_name:
+                key_name = str(i+1) + '_qm_pressed'
+                
             save_dir = output_dir + '/' + key_name
             os.makedirs(save_dir, exist_ok=True)
             if i == 0:
@@ -89,15 +86,20 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
                 # everything between previous and current keystroke
                 segment = df[(df[ts_col] >= prev_t) & (df[ts_col] < current_t)]
 
-                
-            out_name = filename
-            out_path = save_dir + '/' + out_name
+            out_path = save_dir + '/' + filename
             segment.to_csv(out_path, index=False)
             logging.info(f"Saved {len(segment)} rows -> {out_path}")
 
             prev_t = current_t
-
-
+    
+        # From last keystroke to submission
+        segment = df[(df[ts_col] >= prev_t)]
+        save_dir = output_dir + '/submit_pressed'
+        os.makedirs(save_dir, exist_ok=True)
+        out_path = save_dir + '/' + filename
+        segment.to_csv(out_path, index=False)
+        logging.info(f"Saved {len(segment)} rows -> {out_path}")
+            
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Segment CSV files into keystroke-based intervals."
