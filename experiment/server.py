@@ -14,6 +14,7 @@ def start_recording():
     global device, current_recording_id, current_recording_start_ns
     try:
         device = discover_one_device()
+        recording_id = device.recording_start()
         current_recording_start_ns = time.time_ns()
         return jsonify({
             "status": "started",

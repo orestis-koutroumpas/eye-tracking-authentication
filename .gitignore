@@ -1,40 +1,5 @@
-# Ignore Python cache and build files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-*.egg
-build/
-dist/
-.vscode/
+# Ignore everything by default
+/*
 
-# Ignore Jupyter notebook checkpoints
-.ipynb_checkpoints/
-
-# Ignore environment files
-.env
-.venv/
-venv/
-ENV/
-*.env
-
-# Ignore OS-specific files
-.DS_Store
-Thumbs.db
-
-# Ignore logs
-*.log
-
-# Ignore CSV/TSV and other raw data
-data/
-*.csv
-*.tsv
-
-# Allow scripts and configs
-!*.py
-!*.sh
-!*.md
-!*.gitignore
-!requirements.txt
-!setup.py
+# Allow only experiment folder
+!/experiment/
