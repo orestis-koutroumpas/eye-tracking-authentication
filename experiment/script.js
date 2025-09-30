@@ -203,7 +203,7 @@ async function handleLogin() {
   const username = loginEmail.value.trim();
   const password = loginPassword.value.trim();
 
-  if (username === 'exp.user2025' && password === 'Ao4nF$Kq0!vur7?') {
+  if (username === 'EyeTracking2025' && password === 'aP$nF-kc0!vLr%?') {
     loginFeedback.textContent = 'Login successful!';
     loginFeedback.style.color = 'green';
 
