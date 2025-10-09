@@ -1,0 +1,19 @@
+# Ignore everything by default
+*
+
+# But keep the .gitignore file itself
+!.gitignore
+
+# Allow the experiment folder and its contents
+!experiment/
+!experiment/**
+
+# Optional: If you only want specific file types inside experiment/
+# (uncomment and use these lines if you want tighter control)
+!experiment/*.html
+!experiment/*.css
+!experiment/*.js
+!experiment/*.py
+!experiment/*.txt
+!experiment/images/
+!experiment/images/**
