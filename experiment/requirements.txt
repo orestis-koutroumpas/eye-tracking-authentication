@@ -1,0 +1,2 @@
+flask>=3.0.0
+pupil-labs-realtime-api>=2.5.0
