@@ -7,7 +7,7 @@ Drop unecessery columns like section id, recording id, worn, etc.
 
 Adjust timestamps.
 
-Usage: python filter_data.py --data_dir data/demo/genuine_1
+Usage: python filter_data.py --data_dir data/raw_data
 """
 import os
 import argparse
@@ -52,6 +52,19 @@ def drop_columns(data_dir: str):
         df.to_csv(fpath, index=False)
         logger.info(f"Updated and saved {fname}")
 
+def drop_columns_in_all(root_dir: str):
+    """
+    Recursively walk root_dir and apply column dropping only in folders
+    that contain an events.csv file (your end folders).
+    """
+    for dirpath, _, filenames in os.walk(root_dir):
+        # Only end folders have events.csv → consistent rule ✅
+        if "events.csv" not in filenames:
+            continue
+
+        logger.info(f"Processing folder: {dirpath}")
+        drop_columns(dirpath)
+        
 def adjust_timestamps(data_dir: str):
     """
     Adjust all timestamp columns in CSV files by subtracting the recording start timestamp
@@ -62,7 +75,7 @@ def adjust_timestamps(data_dir: str):
     data_dir : str
         Path to the directory containing CSV files.
     """
-
+        
     events_path = os.path.join(data_dir, "events.csv")
     if not os.path.exists(events_path):
         logger.error(f"Events file not found: {events_path}")
@@ -100,7 +113,20 @@ def adjust_timestamps(data_dir: str):
         logger.info(f"Updated and saved {fname}")
 
     logger.info("Done. All timestamp columns adjusted.")
-    
+
+def adjust_timestamps_in_all(root_dir: str):
+    """
+    Walk all subdirectories under root_dir and apply timestamp adjustment
+    to each folder that contains an events.csv.
+    """
+
+    for dirpath, _, filenames in os.walk(root_dir):
+        if "events.csv" not in filenames:
+            continue
+
+        logger.info(f"Processing folder: {dirpath}")
+        adjust_timestamps(dirpath)
+        
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Drop columns"
@@ -113,6 +139,6 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     logger.info("Drop columns ...")
-    drop_columns(args.data_dir)
+    drop_columns_in_all(args.data_dir)
     logger.info("Adjust timestamps ...")
-    adjust_timestamps(args.data_dir)
+    adjust_timestamps_in_all(args.data_dir)

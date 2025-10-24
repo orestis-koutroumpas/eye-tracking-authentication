@@ -201,7 +201,7 @@ def aggregate_segments(segmented_dir: str, label: int = None) -> None:
     recording_df.to_csv(out_path, index=False)
     logging.info(f"Saved aggregated features -> {out_path}")
 
-
+   
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Aggregate segmented eye-tracking data into feature rows."

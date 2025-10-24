@@ -7,7 +7,7 @@ keystroke timestamps. Each segment is saved into a new file with
 the keystroke name in the filename.
 
 Usage:
-    python segment_data_by_keystrokes.py --data_dir data/demo/demo_1 --keystroke_file keystrokes.csv
+    python segment_data_by_keystrokes.py --data_dir data/raw_data
 """
 
 import os
@@ -20,6 +20,8 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
+
+logger = logging.getLogger(__name__)
 
 CSV_FILES = [
     "gaze.csv",
@@ -94,7 +96,14 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
         segment.to_csv(out_path, index=False)
         logging.info(f"Saved {len(segment)} rows -> {out_path}")
 
-
+def segment_data_by_keystrokes_in_all(root_dir: str):
+    """
+    Recursively walk root_dir and apply logic for segmentation.
+    """
+    for dirpath, _, filenames in os.walk(root_dir):
+        logger.info(f"Processing folder: {dirpath}")
+        segment_data_by_keystrokes(dirpath)
+        
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Segment CSV files into keystroke-based intervals."
@@ -111,4 +120,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    segment_data_by_keystrokes(args.data_dir, args.keystroke_file)
+    segment_data_by_keystrokes_in_all(args.data_dir)
