@@ -1,16 +1,14 @@
 """
 filter_data.py
 
-Drop rows with outlier gaze points
+Drop rows with outlier gaze points (not implemented)
 
 Drop unecessery columns like section id, recording id, worn, etc.
 
-Adjust timestamps.
+Adjust timestamps using events.start time
 
-Usage: python filter_data.py --data_dir data/raw_data
 """
 import os
-import argparse
 import logging
 import pandas as pd
 
@@ -28,8 +26,9 @@ CSV_FILES = [
     "saccades.csv",
     "3d_eye_states.csv",
     "blinks.csv",
-    "imu.csv",
 ]
+
+
 def drop_columns(data_dir: str):
     columns_to_drop = [
         "section id",
@@ -51,19 +50,7 @@ def drop_columns(data_dir: str):
         
         df.to_csv(fpath, index=False)
         logger.info(f"Updated and saved {fname}")
-
-def drop_columns_in_all(root_dir: str):
-    """
-    Recursively walk root_dir and apply column dropping only in folders
-    that contain an events.csv file (your end folders).
-    """
-    for dirpath, _, filenames in os.walk(root_dir):
-        # Only end folders have events.csv → consistent rule ✅
-        if "events.csv" not in filenames:
-            continue
-
-        logger.info(f"Processing folder: {dirpath}")
-        drop_columns(dirpath)
+   
         
 def adjust_timestamps(data_dir: str):
     """
@@ -106,39 +93,19 @@ def adjust_timestamps(data_dir: str):
 
         # Subtract start time from each timestamp column
         for col in timestamp_cols:
-            df[col] = df[col].astype(int) - recording_start_ns
+            diffs = df[col].astype("int64") - recording_start_ns
+
+            if (diffs < 0).any():
+                logger.warning(f"Timestamps in column '{col}' appear already adjusted; no subtraction applied.")
+                continue
+
+            df[col] = diffs
+
 
         # Save back (overwrite)
         df.to_csv(fpath, index=False)
         logger.info(f"Updated and saved {fname}")
 
     logger.info("Done. All timestamp columns adjusted.")
-
-def adjust_timestamps_in_all(root_dir: str):
-    """
-    Walk all subdirectories under root_dir and apply timestamp adjustment
-    to each folder that contains an events.csv.
-    """
-
-    for dirpath, _, filenames in os.walk(root_dir):
-        if "events.csv" not in filenames:
-            continue
-
-        logger.info(f"Processing folder: {dirpath}")
-        adjust_timestamps(dirpath)
-        
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Drop columns"
-    )
-    parser.add_argument(
-        "--data_dir",
-        required=True,
-        help="Path to data directory containing CSV files"
-    )
     
-    args = parser.parse_args()
-    logger.info("Drop columns ...")
-    drop_columns_in_all(args.data_dir)
-    logger.info("Adjust timestamps ...")
-    adjust_timestamps_in_all(args.data_dir)
+    

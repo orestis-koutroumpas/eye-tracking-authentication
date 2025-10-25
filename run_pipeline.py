@@ -1,34 +1,59 @@
-import subprocess
+"""
+Data pipeline
+
+Usage:
+    python run_pipeline.py --data_dir data/raw_data
+"""
+
 import argparse
 import os
+import logging
+from pathlib import Path
+from filter_data import drop_columns, adjust_timestamps
+from segment_data_by_keystrokes import segment_data_by_keystrokes
+from aggregate_segments_to_features import aggregate_segments
 
-parser = argparse.ArgumentParser(description="Run full eye-tracking preprocessing pipeline")
-parser.add_argument("--data_dir", required=True, help="Path to raw data folder")
-parser.add_argument("--keystroke_file", default="keystrokes.csv", help="Keystroke CSV file")
-parser.add_argument("--label", type=int, default=0, help="Label for this recording")
-args = parser.parse_args()
+# Configure logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
-data_dir = args.data_dir
+logger = logging.getLogger(__name__)
 
-# 1️ Filter data
-print("Running filter_data.py ...")
-subprocess.run(["python", "filter_data.py", "--data_dir", data_dir], check=True)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run full eye-tracking preprocessing pipeline"
+    )
+    parser.add_argument(
+        "--data_dir", 
+        required=True, 
+        help="Path to raw data folder"
+    )
+    args = parser.parse_args()
 
-# 2️ Segment by keystrokes
-print("Running segment_data_by_keystrokes.py ...")
-subprocess.run([
-    "python", "segment_data_by_keystrokes.py",
-    "--data_dir", data_dir,
-    "--keystroke_file", args.keystroke_file
-], check=True)
+    data_dir = args.data_dir
+    
+    for dirpath, _, filenames in os.walk(data_dir):  
+        if not filenames:
+            continue
+        breakpoint()
+        logging.info(f"\nProccessing {dirpath} ...")
+        
+        logging.info(f"\nDropping columns ...")
+        drop_columns(dirpath)
+        
+        logging.info(f"\nAdjusting timestamps ...")
+        adjust_timestamps(dirpath)
+        
+        logging.info("\nSegmenting data ...")
+        segment_data_by_keystrokes(dirpath)
+        
+        logging.info("\nAggregating features ...")
+        parent = Path(dirpath).parent
+        label = 1 if parent.name == "genuine" else 0 
+        segmented_dir = os.path.join(dirpath, 'Segmentation')
+        aggregate_segments(segmented_dir, label)        
+        
 
-# 3 Aggregate segment features
-segmented_dir = os.path.join(data_dir, "Segmentation")
-print("Running aggregate_segments_to_features.py ...")
-subprocess.run([
-    "python", "aggregate_segments_to_features.py",
-    "--segmented_dir", segmented_dir,
-    "--label", str(args.label)
-], check=True)
-
-print("Pipeline finished successfully!")
+    logging.info("Pipeline finished successfully!")

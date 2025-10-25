@@ -5,9 +5,6 @@ For each keystroke in keystrokes.csv, this script extracts rows from
 the eye-tracking CSV files that fall between the previous and current
 keystroke timestamps. Each segment is saved into a new file with
 the keystroke name in the filename.
-
-Usage:
-    python segment_data_by_keystrokes.py --data_dir data/raw_data
 """
 
 import os
@@ -95,29 +92,5 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
         out_path = save_dir + '/' + filename
         segment.to_csv(out_path, index=False)
         logging.info(f"Saved {len(segment)} rows -> {out_path}")
-
-def segment_data_by_keystrokes_in_all(root_dir: str):
-    """
-    Recursively walk root_dir and apply logic for segmentation.
-    """
-    for dirpath, _, filenames in os.walk(root_dir):
-        logger.info(f"Processing folder: {dirpath}")
-        segment_data_by_keystrokes(dirpath)
         
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Segment CSV files into keystroke-based intervals."
-    )
-    parser.add_argument(
-        "--data_dir",
-        required=True,
-        help="Path to data directory containing CSV files"
-    )
-    parser.add_argument(
-        "--keystroke_file",
-        default="keystrokes.csv",
-        help="Keystroke CSV filename (default: keystrokes.csv)"
-    )
-    args = parser.parse_args()
-
-    segment_data_by_keystrokes_in_all(args.data_dir)
+        
