@@ -7,7 +7,7 @@ with open("config/params.yml") as f:
 
 model, history, cm, metrics = train(config)
 
-plot_learning_curve(history, save_path="results/plots/learning_curve.png")
-plot_confusion_matrix(cm, save_path="results/plots/confusion_matrix.png")
+plot_learning_curve(history, save_path="results/plots/learning_curve1.png")
+plot_confusion_matrix(cm, save_path="results/plots/confusion_matrix1.png")
 
 print("\nEvaluation metrics:", metrics)

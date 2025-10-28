@@ -5,7 +5,7 @@ from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
 
 from data.load import load_data
 from utils.preprocess import scale_data
-from model.model import build_model
+from model.model import build_neural_net_model
 
 def train(config):
     X, y = load_data(config["data"]["path"])
@@ -25,7 +25,7 @@ def train(config):
         restore_best_weights=True
     )
 
-    model = build_model(X_train.shape[1], config)
+    model = build_neural_net_model(X_train.shape[1], config)
 
     history = model.fit(
         X_train, y_train,

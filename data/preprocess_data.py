@@ -2,7 +2,7 @@
 Data preprocess pipeline
 
 Usage:
-    python data.preprocess_data.py --data_dir data/raw/raw_data
+    python -m data.preprocess_data --data_dir data/raw/raw_data
 """
 
 import argparse

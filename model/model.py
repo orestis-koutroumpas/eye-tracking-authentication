@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 
-def build_model(input_dim, config):
+def build_neural_net_model(input_dim, config):
     model = Sequential()
     first_layer = True
     

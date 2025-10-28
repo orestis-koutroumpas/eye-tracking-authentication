@@ -1,5 +1,5 @@
 data:
-  path: "data/raw/raw_data/data.csv"
+  path: "data/raw/training_data/data.csv"
 
 model:
   learning_rate: 0.001
@@ -11,15 +11,15 @@ model:
 
 dataset:
   columns:
-    - gaze_x_median_px
-    - gaze_y_median_px
+    #- gaze_x_median_px
+    #- gaze_y_median_px
     - gaze_azimuth_median_deg
     - gaze_elevation_median_deg
-    - total_number_of_gaze_coordinates
+    #- total_number_of_gaze_coordinates
     - total_number_of_fixations
     - fixations_duration_ms_median
-    - fixations_fixation_x_px_median
-    - fixations_fixation_y_px_median
+    #- fixations_fixation_x_px_median
+    #- fixations_fixation_y_px_median
     - fixations_azimuth_deg_median
     - fixations_elevation_deg_median
     - total_number_of_saccades
@@ -39,7 +39,6 @@ dataset:
     - 3d_eye_states_eyelid_angle_top_right_rad_median
     - 3d_eye_states_eyelid_angle_bottom_right_rad_median
     - 3d_eye_states_eyelid_aperture_right_mm_median
-
   target: "label"
 
 model:
@@ -52,15 +51,15 @@ model:
 
 architecture:
   layers:
-    - units: 128
-      activation: "relu"
-      batch_norm: true
-      dropout: 0.3
     - units: 64
       activation: "relu"
       batch_norm: true
-      dropout: 0.3
+      dropout: 0.5
     - units: 32
+      activation: "relu"
+      batch_norm: true
+      dropout: 0.5
+    - units: 16
       activation: "relu"
   output:
     units: 1
