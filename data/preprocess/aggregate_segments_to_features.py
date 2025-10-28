@@ -8,8 +8,6 @@ this script reads the eye-tracking CSVs, computes specific summary features
 The output is a single CSV containing all segments' aggregated features
 for the given recording.
 
-Usage:
-    python aggregate_segments_to_features.py --segmented_dir data/demo/demo_1/Segmentation --label 0
 """
 
 import os
@@ -204,22 +202,3 @@ def aggregate_segments(segmented_dir: str, label: int = None) -> None:
     recording_df.to_csv(out_path, index=False)
     logging.info(f"Saved aggregated features -> {out_path}")
 
-   
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Aggregate segmented eye-tracking data into feature rows."
-    )
-    parser.add_argument(
-        "--segmented_dir",
-        required=True,
-        help="Path to folder containing segmented keystroke folders"
-    )
-    parser.add_argument(
-        "--label",
-        type=int,
-        default=None,
-        help="Label for this recording (e.g., 1=genuine, 0=impostor)"
-    )
-    args = parser.parse_args()
-
-    aggregate_segments(args.segmented_dir, label=args.label)

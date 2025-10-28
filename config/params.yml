@@ -1,3 +1,14 @@
+data:
+  path: "data/raw/raw_data/data.csv"
+
+model:
+  learning_rate: 0.001
+  batch_size: 32
+  epochs: 120
+  test_size: 0.2
+  validation_split: 0.2
+  early_stopping_patience: 10
+
 dataset:
   columns:
     - gaze_x_median_px
@@ -30,12 +41,14 @@ dataset:
     - 3d_eye_states_eyelid_aperture_right_mm_median
 
   target: "label"
+
 model:
   learning_rate: 0.001
   batch_size: 32
   epochs: 120
   validation_split: 0.2
   early_stopping_patience: 10
+  test_size: 0.2
 
 architecture:
   layers:
