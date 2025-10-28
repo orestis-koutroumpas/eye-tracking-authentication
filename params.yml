@@ -1,0 +1,54 @@
+dataset:
+  columns:
+    - gaze_x_median_px
+    - gaze_y_median_px
+    - gaze_azimuth_median_deg
+    - gaze_elevation_median_deg
+    - total_number_of_gaze_coordinates
+    - total_number_of_fixations
+    - fixations_duration_ms_median
+    - fixations_fixation_x_px_median
+    - fixations_fixation_y_px_median
+    - fixations_azimuth_deg_median
+    - fixations_elevation_deg_median
+    - total_number_of_saccades
+    - saccades_duration_ms_median
+    - saccades_amplitude_px_median
+    - saccades_amplitude_deg_median
+    - saccades_mean_velocity_px/s_median
+    - saccades_peak_velocity_px/s_median
+    - total_number_of_blinks
+    - blinks_duration_median_ms
+    - total_duration_of_segment_ms
+    - 3d_eye_states_pupil_diameter_left_mm_median
+    - 3d_eye_states_pupil_diameter_right_mm_median
+    - 3d_eye_states_eyelid_angle_top_left_rad_median
+    - 3d_eye_states_eyelid_angle_bottom_left_rad_median 
+    - 3d_eye_states_eyelid_aperture_left_mm_median
+    - 3d_eye_states_eyelid_angle_top_right_rad_median
+    - 3d_eye_states_eyelid_angle_bottom_right_rad_median
+    - 3d_eye_states_eyelid_aperture_right_mm_median
+
+  target: "label"
+model:
+  learning_rate: 0.001
+  batch_size: 32
+  epochs: 120
+  validation_split: 0.2
+  early_stopping_patience: 10
+
+architecture:
+  layers:
+    - units: 128
+      activation: "relu"
+      batch_norm: true
+      dropout: 0.3
+    - units: 64
+      activation: "relu"
+      batch_norm: true
+      dropout: 0.3
+    - units: 32
+      activation: "relu"
+  output:
+    units: 1
+    activation: "sigmoid"
