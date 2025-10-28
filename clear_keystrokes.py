@@ -23,6 +23,5 @@ def clean_keystrokes(root_dir):
                     print(f"⚠ Error processing {file_path}: {e}")
 
 if __name__ == "__main__":
-    # Change this to your directory path
     directory = "data/raw_data"
     clean_keystrokes(directory)

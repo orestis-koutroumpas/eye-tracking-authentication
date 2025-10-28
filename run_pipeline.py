@@ -37,19 +37,19 @@ if __name__ == "__main__":
     for dirpath, _, filenames in os.walk(data_dir):  
         if not filenames:
             continue
-        breakpoint()
-        logging.info(f"\nProccessing {dirpath} ...")
         
-        logging.info(f"\nDropping columns ...")
+        logging.info(f"Proccessing {dirpath} ...")
+        
+        logging.info(f"Dropping columns ...")
         drop_columns(dirpath)
         
-        logging.info(f"\nAdjusting timestamps ...")
+        logging.info(f"Adjusting timestamps ...")
         adjust_timestamps(dirpath)
         
-        logging.info("\nSegmenting data ...")
+        logging.info("Segmenting data ...")
         segment_data_by_keystrokes(dirpath)
         
-        logging.info("\nAggregating features ...")
+        logging.info("Aggregating features ...")
         parent = Path(dirpath).parent
         label = 1 if parent.name == "genuine" else 0 
         segmented_dir = os.path.join(dirpath, 'Segmentation')

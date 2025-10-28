@@ -17,6 +17,7 @@ import argparse
 import logging
 import pandas as pd
 import numpy as np
+from pathlib import Path
 
 # Configure logger
 logging.basicConfig(
@@ -197,7 +198,9 @@ def aggregate_segments(segmented_dir: str, label: int = None) -> None:
     recording_df["recording_id"] = os.path.basename(os.path.dirname(segmented_dir))
 
     # Save output CSV
-    out_path = os.path.join(os.path.dirname(segmented_dir), "aggregated_features.csv")
+    file = Path(segmented_dir).parent.name
+    filename = str(file) + '.csv'
+    out_path = os.path.join(os.path.dirname(segmented_dir), filename)
     recording_df.to_csv(out_path, index=False)
     logging.info(f"Saved aggregated features -> {out_path}")
 
