@@ -11,7 +11,7 @@ for the given recording.
 """
 
 import os
-import argparse
+import yaml
 import logging
 import pandas as pd
 import numpy as np
@@ -23,13 +23,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-CSV_FILES = [
-    "gaze.csv",
-    "fixations.csv",
-    "saccades.csv",
-    "3d_eye_states.csv",
-    "blinks.csv",
-]
+with open("config/params.yml") as f:
+    config = yaml.safe_load(f)
 
 # Full feature mapping
 features_per_file = {
@@ -148,7 +143,7 @@ def summarize_csv(file_path: str, prefix: str, file_name: str) -> pd.DataFrame:
 def process_segment(segment_path: str) -> pd.DataFrame:
     """Aggregate all CSVs inside one segment folder into one feature row."""
     features = []
-    for csv_name in CSV_FILES:
+    for csv_name in config["csv_files"]:
         fpath = os.path.join(segment_path, csv_name)
         prefix = os.path.splitext(csv_name)[0] + "_"
         if os.path.exists(fpath):

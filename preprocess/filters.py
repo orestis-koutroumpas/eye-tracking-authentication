@@ -11,6 +11,7 @@ Adjust timestamps using events.start time
 import os
 import logging
 import pandas as pd
+import yaml
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,13 +21,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-CSV_FILES = [
-    "gaze.csv",
-    "fixations.csv",
-    "saccades.csv",
-    "3d_eye_states.csv",
-    "blinks.csv",
-]
+with open("config/params.yml") as f:
+    config = yaml.safe_load(f)
 
 
 def drop_columns(data_dir: str):
@@ -36,7 +32,7 @@ def drop_columns(data_dir: str):
         "worn",
     ]
     for fname in os.listdir(data_dir):
-        if fname not in CSV_FILES:
+        if fname not in config["csv_files"]:
             continue
         fpath = os.path.join(data_dir, fname)
         logger.info(f"Processing {fname}...")
@@ -76,7 +72,7 @@ def adjust_timestamps(data_dir: str):
 
     # Process CSV files
     for fname in os.listdir(data_dir):
-        if fname not in CSV_FILES:
+        if fname not in config["csv_files"]:
             continue
 
         fpath = os.path.join(data_dir, fname)

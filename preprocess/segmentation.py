@@ -5,10 +5,11 @@ For each keystroke in keystrokes.csv, this script extracts rows from
 the eye-tracking CSV files that fall between the previous and current
 keystroke timestamps. Each segment is saved into a new file with
 the keystroke name in the filename.
+
 """
 
 import os
-import argparse
+import yaml
 import logging
 import pandas as pd
 
@@ -20,13 +21,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-CSV_FILES = [
-    "gaze.csv",
-    "fixations.csv",
-    "saccades.csv",
-    "3d_eye_states.csv",
-    "blinks.csv",
-]
+with open("config/params.yml") as f:
+    config = yaml.safe_load(f)
 
 
 def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.csv") -> None:
@@ -51,7 +47,7 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
 
     logging.info(f"Segmenting data in {data_dir}, output -> {output_dir}")
 
-    for filename in CSV_FILES:
+    for filename in config["csv_files"]:
         file_path = os.path.join(data_dir, filename)
         if not os.path.exists(file_path):
             logging.warning(f"File not found: {file_path}, skipping.")

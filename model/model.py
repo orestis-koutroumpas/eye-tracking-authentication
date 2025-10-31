@@ -34,3 +34,4 @@ def build_neural_net_model(input_dim, config):
     )
 
     return model
+

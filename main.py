@@ -1,5 +1,5 @@
 import yaml
-from model.train import train
+from model.trainer import train
 from utils.plotting import plot_learning_curve, plot_confusion_matrix
 
 with open("config/params.yml") as f:
@@ -7,7 +7,7 @@ with open("config/params.yml") as f:
 
 model, history, cm, metrics = train(config)
 
-plot_learning_curve(history, save_path="results/plots/learning_curve1.png")
-plot_confusion_matrix(cm, save_path="results/plots/confusion_matrix1.png")
+plot_learning_curve(history, save_path="results/plots/learning_curve.png")
+plot_confusion_matrix(cm, save_path="results/plots/confusion_matrix.png")
 
 print("\nEvaluation metrics:", metrics)

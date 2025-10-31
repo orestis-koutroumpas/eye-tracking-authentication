@@ -2,7 +2,7 @@
 Data preprocess pipeline
 
 Usage:
-    python -m data.preprocess_data --data_dir data/raw/raw_data
+    python preprocess_data.py --data_dir data/raw_data
 """
 
 import argparse
@@ -11,9 +11,9 @@ import logging
 from pathlib import Path
 import pandas as pd
 
-from data.preprocess.filter_data import drop_columns, adjust_timestamps
-from data.preprocess.segment_data_by_keystrokes import segment_data_by_keystrokes
-from data.preprocess.aggregate_segments_to_features import aggregate_segments
+from preprocess.filters import drop_columns, adjust_timestamps
+from preprocess.segmentation import segment_data_by_keystrokes
+from preprocess.features import aggregate_segments
 
 # Configure logger
 logging.basicConfig(

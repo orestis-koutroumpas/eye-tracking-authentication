@@ -3,8 +3,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
 
-from data.load import load_data
-from utils.preprocess import scale_data
+from data_loader import load_data, scale_data
 from model.model import build_neural_net_model
 
 def train(config):
@@ -29,7 +28,7 @@ def train(config):
 
     history = model.fit(
         X_train, y_train,
-        epochs=config["model"]["epochs"],
+        epochs=config["model"]["max_epochs"],
         batch_size=config["model"]["batch_size"],
         validation_split=config["model"]["validation_split"],
         callbacks=[es]
