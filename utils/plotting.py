@@ -1,24 +1,26 @@
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 import seaborn as sns
-
-def plot_learning_curve(history, save_path=None):
-    plt.figure(figsize=(10, 5))
-    plt.plot(history.history["loss"], label="Training Loss")
-    plt.plot(history.history["val_loss"], label="Validation Loss")
-    plt.title("Learning Curve")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
+import matplotlib.pyplot as plt
+    
+def plot_learning_curve(loss_list, epochs):
+    plt.figure(figsize=(8, 5))
+    plt.plot(range(1, epochs+1), loss_list, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss over Epochs')
     plt.legend()
-    
-    if save_path:
-        plt.savefig(save_path)
+    plt.grid(True)
     plt.show()
+    plt.savefig('results/training_loss.png')
 
-def plot_confusion_matrix(cm, save_path=None):
-    plt.figure(figsize=(6, 5))
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+
+
+def plot_conf_matrix(test_outputs, predicted):
+    cm = confusion_matrix(test_outputs, predicted)
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
+    plt.xlabel("Predicted Label")
+    plt.ylabel("True Label")
     plt.title("Confusion Matrix")
-    
-    if save_path:
-        plt.savefig(save_path)
     plt.show()
+    plt.savefig('results/confusion_matrix.png')
