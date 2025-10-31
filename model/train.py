@@ -1,4 +1,3 @@
-import torch.nn as nn
 import torch.optim as optim
 import logging
 
@@ -10,9 +9,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def train(model, epochs, learning_rate, X_train, y_train):
-    criterion = nn.BCELoss()
-    optimizer = optim.Adam(model.parameters(), learning_rate)    
+def train(model, epochs, loss_function, optimizer, X_train, y_train):
+    criterion = loss_function
     loss_list = []
 
     for epoch in range(epochs):

@@ -66,18 +66,18 @@ dataset:
     - saccade_peak_velocity_median_px_s  
     - pupil_diameter_left_median_mm
     - pupil_diameter_right_median_mm
-#     - eye_ball_center_left_x_median_mm
-#     - eye_ball_center_left_y_median_mm
-#     - eye_ball_center_left_z_median_mm
-#     - eye_ball_center_right_x_median_mm
-#     - eye_ball_center_right_y_median_mm
-#     - eye_ball_center_right_z_median_mm
-#     - optical_axis_left_x_median
-#     - optical_axis_left_y_median
-#     - optical_axis_left_z_median
-#     - optical_axis_right_x_median
-#     - optical_axis_right_y_median
-#     - optical_axis_right_z_median
+    - eye_ball_center_left_x_median_mm
+    - eye_ball_center_left_y_median_mm
+    - eye_ball_center_left_z_median_mm
+    - eye_ball_center_right_x_median_mm
+    - eye_ball_center_right_y_median_mm
+    - eye_ball_center_right_z_median_mm
+    - optical_axis_left_x_median
+    - optical_axis_left_y_median
+    - optical_axis_left_z_median
+    - optical_axis_right_x_median
+    - optical_axis_right_y_median
+    - optical_axis_right_z_median
     - eyelid_angle_top_left_median_rad
     - eyelid_angle_bottom_left_median_rad
     - eyelid_angle_top_right_median_rad
@@ -86,12 +86,13 @@ dataset:
     - eyelid_aperture_right_median_mm
     - total_number_of_blinks
     - blinks_duration_median_ms
+    - recording_id
   target: "label"
 model:
   hyperparameters:
     learning_rate: 0.001
     batch_size: 64
-    epochs: 5000
-    test_size: 0.2
+    epochs: 100
+    test_size: 0.25
     validation_split: 0.2
     early_stopping_patience: 10
