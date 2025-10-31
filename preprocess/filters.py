@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 with open("config/params.yml") as f:
     config = yaml.safe_load(f)
 
+csv_files = [list(d.keys())[0] for d in config['data']['csv_files']]
+
 
 def drop_columns(data_dir: str):
     columns_to_drop = [
@@ -32,7 +34,7 @@ def drop_columns(data_dir: str):
         "worn",
     ]
     for fname in os.listdir(data_dir):
-        if fname not in config["csv_files"]:
+        if fname not in csv_files:
             continue
         fpath = os.path.join(data_dir, fname)
         logger.info(f"Processing {fname}...")
@@ -69,10 +71,9 @@ def adjust_timestamps(data_dir: str):
 
     recording_start_ns = int(events_df.loc[0, "timestamp [ns]"])
     logger.info(f"Recording start timestamp: {recording_start_ns}")
-
     # Process CSV files
     for fname in os.listdir(data_dir):
-        if fname not in config["csv_files"]:
+        if fname not in csv_files:
             continue
 
         fpath = os.path.join(data_dir, fname)

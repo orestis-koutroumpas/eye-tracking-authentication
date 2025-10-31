@@ -46,8 +46,8 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
     os.makedirs(output_dir, exist_ok=True)
 
     logging.info(f"Segmenting data in {data_dir}, output -> {output_dir}")
-
-    for filename in config["csv_files"]:
+    csv_files = [list(d.keys())[0] for d in config['data']['csv_files']]
+    for filename in csv_files:
         file_path = os.path.join(data_dir, filename)
         if not os.path.exists(file_path):
             logging.warning(f"File not found: {file_path}, skipping.")

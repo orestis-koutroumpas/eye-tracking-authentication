@@ -1,9 +1,18 @@
 import torch.nn as nn
 import torch.optim as optim
+import logging
 
-def train(model, epochs, X_train, y_train):
+# Configure logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+
+logger = logging.getLogger(__name__)
+
+def train(model, epochs, learning_rate, X_train, y_train):
     criterion = nn.BCELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.01)    
+    optimizer = optim.Adam(model.parameters(), learning_rate)    
     loss_list = []
 
     for epoch in range(epochs):
@@ -17,6 +26,6 @@ def train(model, epochs, X_train, y_train):
         loss_list.append(loss.item())  # <-- store loss
 
         if (epoch + 1) % 100 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}")
+            logging.info(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.10f}")
     
     return loss_list

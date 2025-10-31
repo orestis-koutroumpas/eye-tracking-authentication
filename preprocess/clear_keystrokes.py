@@ -2,7 +2,7 @@
 Clear keystrokees.csv
 
 Usage:
-    python -m preprocess.clear_keystrokes --data_dir data/raw_data
+    python -m preprocess.clear_keystrokes --data_dir data
 """
 
 import os

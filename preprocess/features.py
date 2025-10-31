@@ -26,59 +26,8 @@ logging.basicConfig(
 with open("config/params.yml") as f:
     config = yaml.safe_load(f)
 
-# Full feature mapping
-features_per_file = {
-    "gaze.csv": [
-        "gaze_x_median_px",
-        "gaze_y_median_px",
-        "azimuth_median_deg",
-        "elevation_median_deg",
-        "total_number_of_gaze_coordinates"
-    ],
-    "fixations.csv": [
-        "total_number_of_fixations",
-        "duration_median_ms",
-        "fixation_x_median_px",
-        "fixation_y_median_px",
-        "azimuth_median_deg",
-        "elevation_median_deg"
-    ],
-    "saccades.csv": [
-        "total_number_of_saccades",
-        "duration_median_ms",
-        "amplitude_median_px",
-        "amplitude_median_deg",
-        "mean_velocity_median_px_s",
-        "peak_velocity_median_px_s"
-    ],
-    "3d_eye_states.csv": [
-        "pupil_diameter_left_median_mm",
-        "pupil_diameter_right_median_mm",
-        "eye_ball_center_left_x_median_mm",
-        "eye_ball_center_left_y_median_mm",
-        "eye_ball_center_left_z_median_mm",
-        "eye_ball_center_right_x_median_mm",
-        "eye_ball_center_right_y_median_mm",
-        "eye_ball_center_right_z_median_mm",
-        "optical_axis_left_x_median",
-        "optical_axis_left_y_median",
-        "optical_axis_left_z_median",
-        "optical_axis_right_x_median",
-        "optical_axis_right_y_median",
-        "optical_axis_right_z_median",
-        "eyelid_angle_top_left_median_rad",
-        "eyelid_angle_bottom_left_median_rad",
-        "eyelid_angle_top_right_median_rad",
-        "eyelid_angle_bottom_right_median_rad",
-        "eyelid_aperture_left_median_mm",
-        "eyelid_aperture_right_median_mm"
-    ],
-    "blinks.csv": [
-        "total_number_of_blinks",
-        "duration_median_ms"
-    ]
-}
-
+csv_files = [list(d.keys())[0] for d in config['data']['csv_files']]
+ 
 
 def summarize_csv(file_path: str, prefix: str, file_name: str) -> pd.DataFrame:
     """Compute specific summary features based on file type."""
@@ -92,58 +41,101 @@ def summarize_csv(file_path: str, prefix: str, file_name: str) -> pd.DataFrame:
 
     # ---- GAZE ----
     if file_name == "gaze.csv":
-        if "timestamp [ns]" in df.columns and not df.empty:
-            start_t = df["timestamp [ns]"].min()
-            end_t = df["timestamp [ns]"].max()
-            features[f"total_duration_of_segment_ms"] = (end_t - start_t) / 1e6  # ns → ms
-
+        features[f"total_number_of_gaze_coordinates"] = len(df)
         if "gaze x [px]" in df.columns:
             features[f"gaze_x_median_px"] = df["gaze x [px]"].median()
         if "gaze y [px]" in df.columns:
             features[f"gaze_y_median_px"] = df["gaze y [px]"].median()
         if "azimuth [deg]" in df.columns:
-            features[f"{prefix}azimuth_median_deg"] = df["azimuth [deg]"].median()
+            features[f"gaze_azimuth_median_deg"] = df["azimuth [deg]"].median()
         if "elevation [deg]" in df.columns:
-            features[f"{prefix}elevation_median_deg"] = df["elevation [deg]"].median()
-        features[f"total_number_of_gaze_coordinates"] = len(df)
+            features[f"gaze_elevation_median_deg"] = df["elevation [deg]"].median()
+        
 
     # ---- FIXATIONS ----
     elif file_name == "fixations.csv":
         features[f"total_number_of_fixations"] = len(df)
-        for col in ["duration [ms]", "fixation x [px]", "fixation y [px]", "azimuth [deg]", "elevation [deg]"]:
-            if col in df.columns:
-                base = col.replace(" [", "_").replace("]", "").replace(" ", "_")
-                features[f"{prefix}{base}_median"] = df[col].median()
+        if "duration [ms]" in df.columns:
+            features[f"fixations_duration_median_ms"] = df["duration [ms]"].median()
+        if "fixation x [px]" in df.columns:
+            features[f"fixation_x_median_px"] = df["fixation x [px]"].median()
+        if "fixation y [px]" in df.columns:
+            features[f"fixation_y_median_px"] = df["fixation y [px]"].median()
+        if "azimuth [deg]" in df.columns:
+            features[f"fixation_azimuth_median_deg"] = df["azimuth [deg]"].median()
+        if "elevation [deg]" in df.columns:
+            features[f"fixation_elevation_median_deg"] = df["elevation [deg]"].median()
 
     # ---- SACCADES ----
     elif file_name == "saccades.csv":
         features[f"total_number_of_saccades"] = len(df)
-        for col in ["duration [ms]", "amplitude [px]", "amplitude [deg]",
-                    "mean velocity [px/s]", "peak velocity [px/s]"]:
-            if col in df.columns:
-                base = col.replace(" [", "_").replace("]", "").replace(" ", "_")
-                features[f"{prefix}{base}_median"] = df[col].median()
+        if "duration [ms]" in df.columns:
+            features[f"saccade_duration_median_ms"] = df["duration [ms]"].median()
+        if "amplitude [px]" in df.columns:
+            features[f"saccade_amplitude_median_px"] = df["amplitude [px]"].median()
+        if "amplitude [deg]" in df.columns:
+            features[f"saccade_amplitude_median_deg"] = df["amplitude [deg]"].median()
+        if "mean velocity [px/s]" in df.columns:
+            features[f"saccade_mean_velocity_median_px_s"] = df["mean velocity [px/s]"].median()
+        if "peak velocity [px/s]" in df.columns:
+            features[f"saccade_peak_velocity_median_px_s"] = df["peak velocity [px/s]"].median()
 
     # ---- 3D EYE STATES ----
     elif file_name == "3d_eye_states.csv":
-        for col in df.select_dtypes(include=[np.number]).columns:
-            base = col.replace(" [", "_").replace("]", "").replace(" ", "_")
-            features[f"{prefix}{base}_median"] = df[col].median()
-
+        if "pupil diameter left [mm]" in df.columns:
+            features[f"pupil_diameter_left_median_mm"] = df["pupil diameter left [mm]"].median()
+        if "pupil diameter right [mm]" in df.columns:
+            features[f"pupil_diameter_right_median_mm"] = df["pupil diameter right [mm]"].median()
+        if "eyeball center left x [mm]" in df.columns:
+            features[f"eye_ball_center_left_x_median_mm"] = df["eyeball center left x [mm]"].median()
+        if "eyeball center left y [mm]" in df.columns:
+            features[f"eye_ball_center_left_y_median_mm"] = df["eyeball center left y [mm]"].median()
+        if "eyeball center left z [mm]" in df.columns:
+            features[f"eye_ball_center_left_z_median_mm"] = df["eyeball center left z [mm]"].median()
+        if "eyeball center right x [mm]" in df.columns:
+            features[f"eye_ball_center_right_x_median_mm"] = df["eyeball center right x [mm]"].median()
+        if "eyeball center right y [mm]" in df.columns:
+            features[f"eye_ball_center_right_y_median_mm"] = df["eyeball center right y [mm]"].median()
+        if "eyeball center right z [mm]" in df.columns:
+            features[f"eye_ball_center_right_z_median_mm"] = df["eyeball center right z [mm]"].median()
+        if "optical axis left x" in df.columns:
+            features[f"optical_axis_left_x_median"] = df["optical axis left x"].median()
+        if "optical axis left y" in df.columns:
+            features[f"optical_axis_left_y_median"] = df["optical axis left y"].median()
+        if "optical axis left z" in df.columns:
+            features[f"optical_axis_left_z_median"] = df["optical axis left z"].median()
+        if "optical axis right x" in df.columns:
+            features[f"optical_axis_right_x_median"] = df["optical axis right x"].median()
+        if "optical axis right y" in df.columns:
+            features[f"optical_axis_right_y_median"] = df["optical axis right y"].median()
+        if "optical axis right z" in df.columns:
+            features[f"optical_axis_right_z_median"] = df["optical axis right z"].median()
+        if "eyelid angle top left [rad]" in df.columns:
+            features[f"eyelid_angle_top_left_median_rad"] = df["eyelid angle top left [rad]"].median()
+        if "eyelid angle bottom left [rad]" in df.columns:
+            features[f"eyelid_angle_bottom_left_median_rad"] = df["eyelid angle bottom left [rad]"].median()
+        if "eyelid angle top right [rad]" in df.columns:
+            features[f"eyelid_angle_top_right_median_rad"] = df["eyelid angle top right [rad]"].median()
+        if "eyelid angle bottom right [rad]" in df.columns:
+            features[f"eyelid_angle_bottom_right_median_rad"] = df["eyelid angle bottom right [rad]"].median()
+        if "eyelid aperture left [mm]" in df.columns:
+            features[f"eyelid_aperture_left_median_mm"] = df["eyelid aperture left [mm]"].median()
+        if "eyelid aperture right [mm]" in df.columns:
+            features[f"eyelid_aperture_right_median_mm"] = df["eyelid aperture right [mm]"].median()
+         
     # ---- BLINKS ----
     elif file_name == "blinks.csv":
         features[f"total_number_of_blinks"] = len(df)
         if "duration [ms]" in df.columns:
-            features[f"{prefix}duration_median_ms"] = df["duration [ms]"].median()
-    
-    
+            features[f"blinks_duration_median_ms"] = df["duration [ms]"].median()
+
     return pd.DataFrame([features]).fillna(0)
 
 
 def process_segment(segment_path: str) -> pd.DataFrame:
     """Aggregate all CSVs inside one segment folder into one feature row."""
     features = []
-    for csv_name in config["csv_files"]:
+    for csv_name in csv_files:
         fpath = os.path.join(segment_path, csv_name)
         prefix = os.path.splitext(csv_name)[0] + "_"
         if os.path.exists(fpath):
@@ -196,4 +188,3 @@ def aggregate_segments(segmented_dir: str, label: int = None) -> None:
     out_path = os.path.join(os.path.dirname(segmented_dir), filename)
     recording_df.to_csv(out_path, index=False)
     logging.info(f"Saved aggregated features -> {out_path}")
-

@@ -1,69 +1,97 @@
 data:
   path: "data/training/data.csv"
   csv_files:
-    - "gaze.csv"
-    - "fixations.csv"
-    - "saccades.csv"
-    - "3d_eye_states.csv"
-    - "blinks.csv"
+  - gaze.csv:
+        total_number_of_gaze_coordinates
+        gaze_x_median_px
+        gaze_y_median_px
+        gaze_azimuth_median_deg
+        gaze_elevation_median_deg
+  - fixations.csv:
+        total_number_of_fixations
+        fixations_duration_median_ms
+        fixation_x_median_px
+        fixation_y_median_px
+        fixation_azimuth_median_deg
+        fixation_elevation_median_deg
+  - saccades.csv:
+        total_number_of_saccades
+        saccade_duration_median_ms
+        saccade_amplitude_median_px
+        saccade_amplitude_median_deg
+        saccade_mean_velocity_median_px_s
+        saccade_peak_velocity_median_px_s  
+  - 3d_eye_states.csv:
+        pupil_diameter_left_median_mm
+        pupil_diameter_right_median_mm
+        eye_ball_center_left_x_median_mm
+        eye_ball_center_left_y_median_mm
+        eye_ball_center_left_z_median_mm
+        eye_ball_center_right_x_median_mm
+        eye_ball_center_right_y_median_mm
+        eye_ball_center_right_z_median_mm
+        optical_axis_left_x_median
+        optical_axis_left_y_median
+        optical_axis_left_z_median
+        optical_axis_right_x_median
+        optical_axis_right_y_median
+        optical_axis_right_z_median
+        eyelid_angle_top_left_median_rad
+        eyelid_angle_bottom_left_median_rad
+        eyelid_angle_top_right_median_rad
+        eyelid_angle_bottom_right_median_rad
+        eyelid_aperture_left_median_mm
+        eyelid_aperture_right_median_mm
+  - blinks.csv:
+        total_number_of_blinks
+        blinks_duration_median_ms
 dataset:
   columns:
+    - total_number_of_gaze_coordinates
     - gaze_x_median_px
     - gaze_y_median_px
     - gaze_azimuth_median_deg
     - gaze_elevation_median_deg
-    - total_number_of_gaze_coordinates
     - total_number_of_fixations
-    - fixations_duration_ms_median
-    - fixations_fixation_x_px_median
-    - fixations_fixation_y_px_median
-    - fixations_azimuth_deg_median
-    - fixations_elevation_deg_median
+    - fixations_duration_median_ms
+    - fixation_x_median_px
+    - fixation_y_median_px
+    - fixation_azimuth_median_deg
+    - fixation_elevation_median_deg
     - total_number_of_saccades
-    - saccades_duration_ms_median
-    - saccades_amplitude_px_median
-    - saccades_amplitude_deg_median
-    - saccades_mean_velocity_px/s_median
-    - saccades_peak_velocity_px/s_median
+    - saccade_duration_median_ms
+    - saccade_amplitude_median_px
+    - saccade_amplitude_median_deg
+    - saccade_mean_velocity_median_px_s
+    - saccade_peak_velocity_median_px_s  
+    - pupil_diameter_left_median_mm
+    - pupil_diameter_right_median_mm
+#     - eye_ball_center_left_x_median_mm
+#     - eye_ball_center_left_y_median_mm
+#     - eye_ball_center_left_z_median_mm
+#     - eye_ball_center_right_x_median_mm
+#     - eye_ball_center_right_y_median_mm
+#     - eye_ball_center_right_z_median_mm
+#     - optical_axis_left_x_median
+#     - optical_axis_left_y_median
+#     - optical_axis_left_z_median
+#     - optical_axis_right_x_median
+#     - optical_axis_right_y_median
+#     - optical_axis_right_z_median
+    - eyelid_angle_top_left_median_rad
+    - eyelid_angle_bottom_left_median_rad
+    - eyelid_angle_top_right_median_rad
+    - eyelid_angle_bottom_right_median_rad
+    - eyelid_aperture_left_median_mm
+    - eyelid_aperture_right_median_mm
     - total_number_of_blinks
     - blinks_duration_median_ms
-    - total_duration_of_segment_ms
-    - 3d_eye_states_pupil_diameter_left_mm_median
-    - 3d_eye_states_pupil_diameter_right_mm_median
-    - 3d_eye_states_eyelid_angle_top_left_rad_median
-    - 3d_eye_states_eyelid_angle_bottom_left_rad_median 
-    - 3d_eye_states_eyelid_aperture_left_mm_median
-    - 3d_eye_states_eyelid_angle_top_right_rad_median
-    - 3d_eye_states_eyelid_angle_bottom_right_rad_median
-    - 3d_eye_states_eyelid_aperture_right_mm_median
-    # - 3d_eye_states_eyeball_center_left_x_mm_median
-    # - 3d_eye_states_eyeball_center_left_y_mm_median
-    # - 3d_eye_states_eyeball_center_left_z_mm_median
-    # - 3d_eye_states_eyeball_center_right_x_mm_median
-    # - 3d_eye_states_eyeball_center_right_y_mm_median
-    # - 3d_eye_states_eyeball_center_right_z_mm_median
   target: "label"
-
 model:
-  learning_rate: 0.001
-  batch_size: 64
-  max_epochs: 1000
-  test_size: 0.2
-  validation_split: 0.2
-  early_stopping_patience: 10
-
-architecture:
-  layers:
-    - units: 128
-      activation: "relu"
-      batch_norm: true
-      dropout: 0.4
-    - units: 64
-      activation: "relu"
-      batch_norm: true
-      dropout: 0.4
-    - units: 32
-      activation: "relu"
-  output:
-    units: 1
-    activation: "sigmoid"
+  hyperparameters:
+    learning_rate: 0.001
+    batch_size: 64
+    epochs: 5000
+    test_size: 0.2
+    validation_split: 0.2
+    early_stopping_patience: 10
