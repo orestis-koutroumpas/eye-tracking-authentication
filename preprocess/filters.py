@@ -107,14 +107,43 @@ def adjust_timestamps(data_dir: str):
     
 def drop_rows(data_dir: str):
     """
-    Drop rows with gaze points out of area of interest
+    Drop rows with timestamps out of area of interest
 
     Args:
-        data_dir (str): _description_
+        data_dir (str): Path to directory containing the CSV files.
     """
+
+    logger.info("Processing gaze.csv...")
+    gaze_path = os.path.join(data_dir, 'gaze.csv')
+    df_gaze = pd.read_csv(gaze_path)
+    timestamps_to_drop = set(df_gaze[df_gaze['gaze y [px]'] > 880]['timestamp [ns]'])
+
     for fname in os.listdir(data_dir):
-        if fname not in csv_files:
+        if fname not in csv_files or fname == 'gaze.csv':
             continue
+
         fpath = os.path.join(data_dir, fname)
         logger.info(f"Processing {fname}...")
-        
+
+        df = pd.read_csv(fpath)
+
+        if 'timestamp [ns]' in df.columns:
+            before = len(df)
+            df = df[~df['timestamp [ns]'].isin(timestamps_to_drop)]
+            after = len(df)
+            logger.info(f"Dropped {before - after} from {before} rows for {fname}.")
+
+        elif {'start timestamp [ns]', 'end timestamp [ns]'}.issubset(df.columns):
+            before = len(df)
+            mask = df['start timestamp [ns]'].isin(timestamps_to_drop) & \
+                   df['end timestamp [ns]'].isin(timestamps_to_drop)
+            df = df[~mask]
+            after = len(df)
+            logger.info(f"Dropped {before - after} from {before} rows for {fname}.")
+
+        else:
+            logger.warning(f"No timestamp columns found in {fname}, skipping.")
+            continue
+
+        df.to_csv(fpath, index=False)
+        logger.info(f"Saved cleaned {fname}.")

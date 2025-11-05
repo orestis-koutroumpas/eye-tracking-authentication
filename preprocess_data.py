@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 import pandas as pd
 
-from preprocess.filters import drop_columns, adjust_timestamps
+from preprocess.filters import drop_columns, adjust_timestamps, drop_rows
 from preprocess.segmentation import segment_data_by_keystrokes
 from preprocess.features import aggregate_segments
 
@@ -54,6 +54,10 @@ def run_pipeline(data_dir):
             continue
         
         logger.info(f"Proccessing {dirpath} ...")
+        
+        logger.info(f"Dropping rows ...")
+        drop_rows(dirpath)
+        breakpoint()
         
         logger.info(f"Dropping columns ...")
         drop_columns(dirpath)
