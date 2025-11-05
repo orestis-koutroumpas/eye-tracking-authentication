@@ -23,6 +23,9 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
+logger = logging.getLogger(__name__)
+
+
 with open("config/params.yml") as f:
     config = yaml.safe_load(f)
 
@@ -34,7 +37,7 @@ def summarize_csv(file_path: str, prefix: str, file_name: str) -> pd.DataFrame:
     try:
         df = pd.read_csv(file_path)
     except Exception as e:
-        logging.error(f"Error reading {file_path}: {e}")
+        logger.error(f"Error reading {file_path}: {e}")
         return pd.DataFrame()
 
     features = {}
@@ -142,7 +145,7 @@ def process_segment(segment_path: str) -> pd.DataFrame:
             summary = summarize_csv(fpath, prefix, csv_name)
             features.append(summary)
         else:
-            logging.warning(f"Missing file: {fpath}")
+            logger.warning(f"Missing file: {fpath}")
 
     if features:
         merged = pd.concat(features, axis=1)
@@ -156,10 +159,10 @@ def process_segment(segment_path: str) -> pd.DataFrame:
 def aggregate_segments(segmented_dir: str, label: int = None) -> None:
     """Aggregate all segment folders into a recording-level DataFrame."""
     if not os.path.exists(segmented_dir):
-        logging.error(f"Segmented directory not found: {segmented_dir}")
+        logger.error(f"Segmented directory not found: {segmented_dir}")
         return
 
-    logging.info(f"Aggregating segments in {segmented_dir}")
+    logger.info(f"Aggregating segments in {segmented_dir}")
 
     subfolders = sorted(
         [os.path.join(segmented_dir, d) for d in os.listdir(segmented_dir)
@@ -172,7 +175,7 @@ def aggregate_segments(segmented_dir: str, label: int = None) -> None:
         all_segments.append(seg_df)
 
     if not all_segments:
-        logging.error(f"No segments found in {segmented_dir}")
+        logger.error(f"No segments found in {segmented_dir}")
         return
 
     recording_df = pd.concat(all_segments, axis=0, ignore_index=True)
@@ -187,4 +190,4 @@ def aggregate_segments(segmented_dir: str, label: int = None) -> None:
     filename = str(file) + '.csv'
     out_path = os.path.join(os.path.dirname(segmented_dir), filename)
     recording_df.to_csv(out_path, index=False)
-    logging.info(f"Saved aggregated features -> {out_path}")
+    logger.info(f"Saved aggregated features -> {out_path}")

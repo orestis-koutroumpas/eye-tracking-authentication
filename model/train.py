@@ -24,6 +24,6 @@ def train(model, epochs, loss_function, optimizer, X_train, y_train):
         loss_list.append(loss.item())  # <-- store loss
 
         if (epoch + 1) % 100 == 0:
-            logging.info(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.10f}")
+            logger.info(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.10f}")
     
     return loss_list

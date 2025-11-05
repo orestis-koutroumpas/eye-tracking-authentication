@@ -32,12 +32,12 @@ def clean_keystrokes(root_dir):
                     df_clean = df[~df['name'].isin(['Tab_pressed', 'Shift_pressed', 'CapsLock_pressed', 'Enter_pressed'])]
 
                     if len(df) > 31:
-                        logging.info(file_path)
+                        logger.info(file_path)
                     # Save cleaned CSV back to same file
                     df_clean.to_csv(file_path, index=False)
 
                 except Exception as e:
-                    logging.info(f"Error processing {file_path}: {e}")
+                    logger.info(f"Error processing {file_path}: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

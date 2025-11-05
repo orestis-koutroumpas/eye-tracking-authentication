@@ -20,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def load_data(data_path):
-    logging.info("Loading training data ...")
+    logger.info("Loading training data ...")
     
     with open("config/params.yml") as f:
         config = yaml.safe_load(f)

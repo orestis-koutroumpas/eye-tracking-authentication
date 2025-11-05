@@ -11,6 +11,9 @@ from utils.plotting import *
 from torch.nn.functional import softmax
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+logger = logging.getLogger(__name__)
+ 
 with open("config/params.yml") as f:
      config = yaml.safe_load(f)
 
@@ -90,7 +93,7 @@ def main():
     y_scores = np.array(all_probs)
 
     accuracy = (y_pred == y_true).mean()
-    logging.info(f"Test Accuracy: {accuracy*100:.2f}%")
+    logger.info(f"Test Accuracy: {accuracy*100:.2f}%")
     # Visualizations
     plot_learning_curve(loss_list, epochs)
     plot_conf_matrix(y_true, y_pred)

@@ -105,4 +105,16 @@ def adjust_timestamps(data_dir: str):
 
     logger.info("Done. All timestamp columns adjusted.")
     
-    
+def drop_rows(data_dir: str):
+    """
+    Drop rows with gaze points out of area of interest
+
+    Args:
+        data_dir (str): _description_
+    """
+    for fname in os.listdir(data_dir):
+        if fname not in csv_files:
+            continue
+        fpath = os.path.join(data_dir, fname)
+        logger.info(f"Processing {fname}...")
+        

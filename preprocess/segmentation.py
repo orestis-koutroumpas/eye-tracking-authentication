@@ -38,25 +38,25 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
     """
     ks_path = os.path.join(data_dir, keystroke_file)
     if not os.path.exists(ks_path):
-        logging.error(f"Keystroke file not found: {ks_path}")
+        logger.error(f"Keystroke file not found: {ks_path}")
         return
 
     ks = pd.read_csv(ks_path)
     output_dir = data_dir + '/' + "Segmentation"
     os.makedirs(output_dir, exist_ok=True)
 
-    logging.info(f"Segmenting data in {data_dir}, output -> {output_dir}")
+    logger.info(f"Segmenting data in {data_dir}, output -> {output_dir}")
     csv_files = [list(d.keys())[0] for d in config['data']['csv_files']]
     for filename in csv_files:
         file_path = os.path.join(data_dir, filename)
         if not os.path.exists(file_path):
-            logging.warning(f"File not found: {file_path}, skipping.")
+            logger.warning(f"File not found: {file_path}, skipping.")
             continue
 
         df = pd.read_csv(file_path)
         ts_cols = [c for c in df.columns if "timestamp" in c.lower()]
         if not ts_cols:
-            logging.warning(f"No timestamp column found in {filename}, skipping.")
+            logger.warning(f"No timestamp column found in {filename}, skipping.")
             continue
 
         ts_col = ts_cols[-1]
@@ -78,7 +78,7 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
             os.makedirs(save_dir, exist_ok=True)
             out_path = save_dir + '/' + filename
             segment.to_csv(out_path, index=False)
-            logging.info(f"Saved {len(segment)} rows -> {out_path}")
+            logger.info(f"Saved {len(segment)} rows -> {out_path}")
 
             prev_t = current_t
             
@@ -87,6 +87,6 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
         os.makedirs(save_dir, exist_ok=True)
         out_path = save_dir + '/' + filename
         segment.to_csv(out_path, index=False)
-        logging.info(f"Saved {len(segment)} rows -> {out_path}")
+        logger.info(f"Saved {len(segment)} rows -> {out_path}")
         
         
