@@ -57,8 +57,7 @@ def run_pipeline(data_dir):
         
         logger.info(f"Dropping rows ...")
         drop_rows(dirpath)
-        breakpoint()
-        
+
         logger.info(f"Dropping columns ...")
         drop_columns(dirpath)
         
