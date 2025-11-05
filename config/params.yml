@@ -66,18 +66,18 @@ dataset:
     - saccade_peak_velocity_median_px_s  
     - pupil_diameter_left_median_mm
     - pupil_diameter_right_median_mm
-    - eye_ball_center_left_x_median_mm
-    - eye_ball_center_left_y_median_mm
-    - eye_ball_center_left_z_median_mm
-    - eye_ball_center_right_x_median_mm
-    - eye_ball_center_right_y_median_mm
-    - eye_ball_center_right_z_median_mm
-    - optical_axis_left_x_median
-    - optical_axis_left_y_median
-    - optical_axis_left_z_median
-    - optical_axis_right_x_median
-    - optical_axis_right_y_median
-    - optical_axis_right_z_median
+#     - eye_ball_center_left_x_median_mm
+#     - eye_ball_center_left_y_median_mm
+#     - eye_ball_center_left_z_median_mm
+#     - eye_ball_center_right_x_median_mm
+#     - eye_ball_center_right_y_median_mm
+#     - eye_ball_center_right_z_median_mm
+#     - optical_axis_left_x_median
+#     - optical_axis_left_y_median
+#     - optical_axis_left_z_median
+#     - optical_axis_right_x_median
+#     - optical_axis_right_y_median
+#     - optical_axis_right_z_median
     - eyelid_angle_top_left_median_rad
     - eyelid_angle_bottom_left_median_rad
     - eyelid_angle_top_right_median_rad

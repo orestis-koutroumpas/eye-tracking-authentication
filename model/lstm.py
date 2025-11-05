@@ -26,7 +26,6 @@ class EyeTrackingSequenceDataset(Dataset):
         feature_cols = [c for c in df.columns if c not in [recording_col, target_col]]
 
         self.sequences, self.targets = [], []
-
         for rec_id, group in df.groupby(recording_col):
             X_values = group[feature_cols].values
             y_values = group[target_col].values
