@@ -31,7 +31,7 @@ def clean_keystrokes(root_dir):
                     # Filter out unwanted rows
                     df_clean = df[~df['name'].isin(['Tab_pressed', 'Shift_pressed', 'CapsLock_pressed', 'Enter_pressed'])]
 
-                    if len(df) > 31:
+                    if len(df) >= 31:
                         logger.info(file_path)
                     # Save cleaned CSV back to same file
                     df_clean.to_csv(file_path, index=False)

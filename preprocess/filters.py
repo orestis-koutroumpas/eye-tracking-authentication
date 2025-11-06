@@ -107,7 +107,7 @@ def adjust_timestamps(data_dir: str):
     
 def drop_rows(data_dir: str):
     """
-    Drop rows with timestamps out of area of interest
+    Drop rows out of area of interest
 
     Args:
         data_dir (str): Path to directory containing the CSV files.
@@ -116,10 +116,23 @@ def drop_rows(data_dir: str):
     logger.info("Processing gaze.csv...")
     gaze_path = os.path.join(data_dir, 'gaze.csv')
     df_gaze = pd.read_csv(gaze_path)
-    
-    threshold = df_gaze['gaze y [px]'].quantile(0.75)
-    timestamps_to_drop = df_gaze[df_gaze['gaze y [px]'] > threshold]['timestamp [ns]']
+    before = len(df_gaze)
 
+    # Compute the 75th percentile threshold
+    threshold = df_gaze['gaze y [px]'].quantile(0.75)
+
+    # Define rows to drop: above both the quantile threshold and 850 px
+    mask_to_drop = (df_gaze['gaze y [px]'] > threshold) & (df_gaze['gaze y [px]'] > 850)
+    timestamps_to_drop = df_gaze.loc[mask_to_drop, 'timestamp [ns]']
+
+    # Keep only rows that don't meet both conditions
+    df = df_gaze[~mask_to_drop]
+    after = len(df)
+
+    logger.info(f"Dropped {before - after} from {before} rows for gaze.csv")
+    df.to_csv(gaze_path, index=False)
+
+    # Now apply to other CSVs
     for fname in os.listdir(data_dir):
         if fname not in csv_files or fname == 'gaze.csv':
             continue
@@ -133,7 +146,7 @@ def drop_rows(data_dir: str):
             before = len(df)
             df = df[~df['timestamp [ns]'].isin(timestamps_to_drop)]
             after = len(df)
-            logger.info(f"Dropped {before - after} from {before} rows for {fname}.")
+            logger.info(f"Dropped {before - after} from {before} rows for {fname}")
 
         elif {'start timestamp [ns]', 'end timestamp [ns]'}.issubset(df.columns):
             before = len(df)
@@ -141,10 +154,10 @@ def drop_rows(data_dir: str):
                    df['end timestamp [ns]'].isin(timestamps_to_drop)
             df = df[~mask]
             after = len(df)
-            logger.info(f"Dropped {before - after} from {before} rows for {fname}.")
+            logger.info(f"Dropped {before - after} from {before} rows for {fname}")
 
         else:
-            logger.warning(f"No timestamp columns found in {fname}, skipping.")
+            logger.warning(f"No timestamp columns found in {fname}, skipping")
             continue
 
         df.to_csv(fpath, index=False)
