@@ -104,7 +104,8 @@ def adjust_timestamps(data_dir: str):
         logger.info(f"Updated and saved {fname}")
 
     logger.info("Done. All timestamp columns adjusted.")
-    
+
+  
 def drop_rows(data_dir: str):
     """
     Drop rows out of area of interest
@@ -121,8 +122,8 @@ def drop_rows(data_dir: str):
     # Compute the 75th percentile threshold
     threshold = df_gaze['gaze y [px]'].quantile(0.75)
 
-    # Define rows to drop: above both the quantile threshold and 850 px
-    mask_to_drop = (df_gaze['gaze y [px]'] > threshold) & (df_gaze['gaze y [px]'] > 850)
+    # Define rows to drop: above both the quantile threshold and 900 px
+    mask_to_drop = (df_gaze['gaze y [px]'] > threshold) & (df_gaze['gaze y [px]'] > 900)
     timestamps_to_drop = df_gaze.loc[mask_to_drop, 'timestamp [ns]']
 
     # Keep only rows that don't meet both conditions
