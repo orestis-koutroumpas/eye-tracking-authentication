@@ -1,13 +1,9 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-from torch.nn.functional import softmax
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc
-
-# ----------------------------
-# General plotting helpers
-# ----------------------------
+import pandas as pd
+import seaborn as sns
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 def plot_learning_curve(losses, epochs, save_path="results/plots/learning_curve.png"):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -21,6 +17,7 @@ def plot_learning_curve(losses, epochs, save_path="results/plots/learning_curve.
     plt.savefig(save_path)
     plt.show()
 
+
 def plot_conf_matrix(y_true, y_pred, save_path="results/plots/confusion_matrix.png"):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     cm = confusion_matrix(y_true, y_pred)
@@ -31,119 +28,226 @@ def plot_conf_matrix(y_true, y_pred, save_path="results/plots/confusion_matrix.p
     plt.savefig(save_path)
     plt.show()
 
-def plot_roc_curve(y_true, y_scores, save_path="results/metrics/roc_curve.png"):
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    fpr, tpr, _ = roc_curve(y_true, y_scores)
-    roc_auc = auc(fpr, tpr)
 
-    plt.figure(figsize=(6,4))
-    plt.plot(fpr, tpr, color='tab:blue', lw=2, label=f"AUC = {roc_auc:.2f}")
-    plt.plot([0, 1], [0, 1], color='gray', lw=1, linestyle='--')
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("ROC Curve")
-    plt.legend(loc="lower right")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.show()
-
-def plot_far_frr(y_true, y_scores, save_path="results/metrics/far_frr_curve.png"):
-    """
-    FAR = FP / (FP + TN)
-    FRR = FN / (TP + FN)
-    """
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    fpr, tpr, thresholds = roc_curve(y_true, y_scores)
-    far = fpr
-    frr = 1 - tpr
-
-    plt.figure(figsize=(6,4))
-    plt.plot(thresholds, far, label="FAR (False Acceptance Rate)", color='tab:red')
-    plt.plot(thresholds, frr, label="FRR (False Rejection Rate)", color='tab:green')
-    plt.xlabel("Decision Threshold")
-    plt.ylabel("Error Rate")
-    plt.title("FAR / FRR vs Threshold")
-    plt.gca().invert_xaxis()  # common practice to have threshold descending
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.show()
-
-# ----------------------------
-# Sequence probability histogram per keystroke
-# ----------------------------
-
-def plot_all_sequence_internal_probs_hist_keystrokes(
-    model,
-    test_df,
-    device,
-    seq_len=32,
-    save_dir="results/sequence_probs_keystrokes",
-    annotate_probs=True
-):
-    """
-    For every sequence in test_df (grouped by recording_id):
-    - Feed rows 1..seq_len through the model
-    - Record probability for class 1 after each keystroke
-    - Plot histogram of probabilities with keystrokes on x-axis
-    """
+def plot_trajectory_heatmap(data_path, plot_name="trajectory_heatmap.png"):
+    gaze = pd.read_csv(data_path + '/gaze.csv')
+    plt.figure(figsize=(8,6))
+    plt.hist2d(gaze["gaze x [px]"], gaze["gaze y [px]"], bins=100, cmap="viridis")
+    plt.colorbar(label="Count")
+    plt.gca().invert_yaxis()
+    plt.title("Gaze Point Density (2D Histogram)")
+    
+    folder_name = os.path.basename(data_path)
+    save_dir = os.path.join("results", "plots", folder_name)
     os.makedirs(save_dir, exist_ok=True)
-    model.eval()
+    save_path = os.path.join(save_dir, plot_name)
 
-    # Keystrokes including "SUBMIT" as last step
-    keystrokes = [
-        "E", "y", "e", "T", "r", "a", "c", "k", "i", "n", "g",
-        "2", "0", "2", "5", "a", "P", "$", "n", "F", "-", "k",
-        "c", "0", "!", "v", "L", "r", "%", "?", "SUBMIT"
-    ]
-    feature_cols = [c for c in test_df.columns if c not in ["recording_id", "label"]]
-    recordings = test_df["recording_id"].unique()
+    # Adjust layout for labels
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
 
-    for rec_id in recordings:
-        rec_data = test_df[test_df["recording_id"] == rec_id].sort_index()
+    # Save figure
+    plt.savefig(save_path, bbox_inches="tight")
 
-        # Split into contiguous sequences
-        for seq_idx in range(0, len(rec_data) - seq_len + 1, seq_len):
-            seq = rec_data.iloc[seq_idx:seq_idx + seq_len]
-            X_values = seq[feature_cols].values.astype(np.float32)
-            y_true = int(seq["label"].iloc[0]) if "label" in seq.columns else None
+    # Show and close figure
+    # plt.show()
 
-            probs = []
-            with torch.no_grad():
-                for t in range(1, seq_len + 1):
-                    subseq = torch.tensor(X_values[:t]).unsqueeze(0).to(device)
-                    outputs = model(subseq)
-                    prob = softmax(outputs, dim=1)[0, 1].item()
-                    probs.append(prob)
 
-            final_pred = int(probs[-1] > 0.5)
-            if y_true == final_pred:
-                continue  # skip correct sequences if flag is set
+def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
+    fixations = pd.read_csv(data_path + '/fixations.csv')
+    plt.figure(figsize=(8,6))
+    plt.plot(fixations["fixation x [px]"], fixations["fixation y [px]"], '-o', alpha=0.7)
+    plt.gca().invert_yaxis()
+    plt.title("Scanpath (Fixation Sequence)")
+    plt.xlabel("X [px]")
+    plt.ylabel("Y [px]")
 
-            # Color bars based on probability threshold
-            colors = ["tab:green" if p > 0.5 else "tab:orange" for p in probs]
+    folder_name = os.path.basename(data_path)
+    save_dir = os.path.join("results", "plots", folder_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, plot_name)
 
-            plt.figure(figsize=(12, 4))
-            plt.bar(range(1, seq_len + 1), probs, color=colors, width=0.8)
-            plt.axhline(0.5, color="red", linestyle="--", label="Threshold 0.5")
-            plt.xticks(range(1, seq_len + 1), keystrokes, rotation=45, fontsize=9)
-            plt.ylim(0, 1.1)
-            plt.xlabel("Keystroke pressed (sequence order)")
-            plt.ylabel("Predicted Probability (Class 1)")
-            plt.title(f"Recording {rec_id} | True={y_true} | Pred={final_pred}")
-            plt.legend()
-            plt.grid(axis="y", linestyle=":", alpha=0.6)
+    # Adjust layout for labels
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
 
-            # Annotate probabilities above bars
-            if annotate_probs:
-                for i, p in enumerate(probs):
-                    plt.text(i+1, p+0.02, f"{p:.2f}", ha="center", va="bottom", fontsize=8)
+    # Save figure
+    plt.savefig(save_path, bbox_inches="tight")
 
-            plt.tight_layout()
-            save_path = os.path.join(save_dir, f"recording_{rec_id}_seq_{seq_idx//seq_len+1}_true{y_true}_pred{final_pred}.png")
-            plt.savefig(save_path)
-            plt.close()
+    # Show and close figure
+    # plt.show()
 
-    print(f"✅ Saved sequence probability histograms in: {save_dir}")
+
+def plot_pupil_diameter(data_path, plot_name="pupil_diameter_over_time.png"):
+    # Load data
+    eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
+    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
+
+    # Convert timestamps to seconds for readability
+    eye3d["time_s"] = eye3d["timestamp [ns]"] / 1e9
+    keys["time_s"] = keys["timestamp [ns]"] / 1e9
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+
+    # Plot both eyes
+    ax.plot(eye3d["time_s"], eye3d["pupil diameter left [mm]"], label="Left Eye", color="blue")
+    ax.plot(eye3d["time_s"], eye3d["pupil diameter right [mm]"], label="Right Eye", color="orange")
+
+    # Labels and title
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Pupil Diameter [mm]")
+    ax.set_title("Pupil Diameter Over Time (Both Eyes)")
+    ax.legend()
+
+    # Add vertical lines for keystrokes
+    ax.axvline(x=eye3d["time_s"].min(), color="gray", linestyle="--", alpha=0.3)
+    for _, row in keys.iterrows():
+        ax.axvline(x=row["time_s"], color="gray", linestyle="--", alpha=0.3)
+    ax.axvline(x=eye3d["time_s"].max(), color="gray", linestyle="--", alpha=0.3)
+
+    # --- Add keystroke labels BELOW the x-axis ---
+    y_min, y_max = ax.get_ylim()
+    text_y = y_min - (y_max - y_min) * 0.15  # a bit below the axis
+
+    ax.text(eye3d["time_s"].min(), text_y, "Start", rotation=-45,
+            va="top", ha="center", fontsize=8, color="gray")
+    for _, row in keys.iterrows():
+        ax.text(row["time_s"], text_y, row["name"], rotation=0,
+                va="top", ha="center", fontsize=8, color="gray")
+    ax.text(eye3d["time_s"].max(), text_y, "Submit", rotation=-45,
+            va="top", ha="center", fontsize=8, color="gray")
+    
+    # Adjust layout for label space
+    plt.tight_layout(rect=[0, 0.1, 1, 1])  # add bottom padding
+    ax.set_ylim(y_min, y_max)  # restore y-limits after adding text
+
+    folder_name = os.path.basename(data_path)
+    save_dir = os.path.join("results", "plots", folder_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, plot_name)
+
+    # Adjust layout for labels
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
+
+    # Save figure
+    fig.savefig(save_path, bbox_inches="tight")
+
+    # Show and close figure
+    # plt.show()
+    # plt.close(fig)
+
+
+def plot_eyelid_aperture_over_time(data_path, plot_name="eyelid_over_time.png"):
+    # Load data
+    eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
+    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
+
+    # Convert timestamps to seconds for readability
+    eye3d["time_s"] = eye3d["timestamp [ns]"] / 1e9
+    keys["time_s"] = keys["timestamp [ns]"] / 1e9
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 5))
+
+    # Plot both eyes
+    ax.plot(eye3d["time_s"], eye3d["eyelid aperture left [mm]"], label="Left Eye", color="blue")
+    ax.plot(eye3d["time_s"], eye3d["eyelid aperture right [mm]"], label="Right Eye", color="orange")
+
+    # Axis labels and title
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Eyelid Aperture [mm]")
+    ax.set_title("Eyelid Aperture Over Time")
+    ax.legend()
+
+    # Keystroke vertical lines
+    ax.axvline(x=eye3d["time_s"].min(), color="gray", linestyle="--", alpha=0.3)
+    for _, row in keys.iterrows():
+        ax.axvline(x=row["time_s"], color="gray", linestyle="--", alpha=0.3)
+    ax.axvline(x=eye3d["time_s"].max(), color="gray", linestyle="--", alpha=0.3)
+
+    # --- Add keystroke labels BELOW the x-axis ---
+    y_min, y_max = ax.get_ylim()
+    text_y = y_min - (y_max - y_min) * 0.15  # place labels slightly below the axis
+    
+    ax.text(eye3d["time_s"].min(), text_y, "Start", rotation=-45,
+            va="top", ha="center", fontsize=8, color="gray")
+    for _, row in keys.iterrows():
+        ax.text(row["time_s"], text_y, row["name"], rotation=0,
+                va="top", ha="center", fontsize=8, color="gray")
+    ax.text(eye3d["time_s"].max(), text_y, "Submit", rotation=-45,
+            va="top", ha="center", fontsize=8, color="gray")
+    # Add extra space below for labels
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    ax.set_ylim(y_min, y_max)  # restore proper limits after adding text
+
+    folder_name = os.path.basename(data_path)
+    save_dir = os.path.join("results", "plots", folder_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, plot_name)
+
+    # Adjust layout for labels
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
+
+    # Save figure
+    fig.savefig(save_path, bbox_inches="tight")
+
+    # Show and close figure
+    # plt.show()
+    # plt.close(fig)
+
+def plot_saccade_velo_over_time(data_path, plot_name="saccades_velocity_over_time.png"):
+    saccades = pd.read_csv(data_path + '/saccades.csv')
+    keys = pd.read_csv(data_path + '/keystrokes.csv')
+    
+    saccades["start timestamp [ns]"] = saccades["start timestamp [ns]"] / 1e9
+    keys["time_s"] = keys["timestamp [ns]"] / 1e9
+    
+    fig, ax = plt.subplots(figsize=(12, 5))
+
+    # Plot both eyes
+    ax.plot(saccades["start timestamp [ns]"], saccades["mean velocity [px/s]"], label="Mean Velocity", color="blue")
+    ax.plot(saccades["start timestamp [ns]"], saccades["peak velocity [px/s]"], label="Peak Velocity", color="orange")
+
+    # Axis labels and title
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Velocity [px/s]")
+    ax.set_title("Saccade Velocities Over Time")
+    ax.legend()
+
+    # Keystroke vertical lines
+    ax.axvline(x=saccades["start timestamp [ns]"].min(), color="gray", linestyle="--", alpha=0.3)
+    for _, row in keys.iterrows():
+        ax.axvline(x=row["time_s"], color="gray", linestyle="--", alpha=0.3)
+    ax.axvline(x=saccades["start timestamp [ns]"].max(), color="gray", linestyle="--", alpha=0.3)
+
+    # --- Add keystroke labels BELOW the x-axis ---
+    y_min, y_max = ax.get_ylim()
+    text_y = y_min - (y_max - y_min) * 0.15 
+    
+    ax.text(saccades["start timestamp [ns]"].min(), text_y, "Start", rotation=-45,
+        va="top", ha="center", fontsize=8, color="gray")
+    for _, row in keys.iterrows():
+        ax.text(row["time_s"], text_y, row["name"], rotation=0,
+                va="top", ha="center", fontsize=8, color="gray")
+        
+    ax.text(saccades["start timestamp [ns]"].max(), text_y, "Submit", rotation=-45,
+            va="top", ha="center", fontsize=8, color="gray")
+    
+    # Add extra space below for labels
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    ax.set_ylim(y_min, y_max)  # restore proper limits after adding text
+
+    folder_name = os.path.basename(data_path)
+
+    # Build save directory and path
+    save_dir = os.path.join("results", "plots", folder_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, plot_name)
+
+    # Adjust layout for labels
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
+
+    # Save figure
+    fig.savefig(save_path, bbox_inches="tight")
+
+    # Show and close figure
+    # plt.show()
+    # plt.close(fig)
