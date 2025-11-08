@@ -45,9 +45,10 @@ def drop_columns(data_dir: str):
         if existing:
             logger.info(f"Dropping {existing}")
             df = df.drop(existing, axis=1)
-        
-        df.to_csv(fpath, index=False)
-        logger.info(f"Updated and saved {fname}")
+            df.to_csv(fpath, index=False)
+            logger.info(f"Updated and saved {fname}")
+        else:
+            logger.info("Columns already dropped")
    
         
 def adjust_timestamps(data_dir: str):
@@ -120,10 +121,10 @@ def drop_rows(data_dir: str):
     before = len(df_gaze)
 
     # Compute the 75th percentile threshold
-    threshold = df_gaze['gaze y [px]'].quantile(0.75)
+    threshold = df_gaze['gaze y [px]'].quantile(0.6)
 
     # Define rows to drop: above both the quantile threshold and 900 px
-    mask_to_drop = (df_gaze['gaze y [px]'] > threshold) & (df_gaze['gaze y [px]'] > 900)
+    mask_to_drop = (df_gaze['gaze y [px]'] > threshold) & (df_gaze['gaze y [px]'] > 850)
     timestamps_to_drop = df_gaze.loc[mask_to_drop, 'timestamp [ns]']
 
     # Keep only rows that don't meet both conditions

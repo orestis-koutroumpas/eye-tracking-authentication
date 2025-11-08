@@ -28,10 +28,14 @@ if __name__ == "__main__":
             continue
     # dirpath = 'data/genuine/orestis_117-86becbd0'
         print(f"Processing folder: {dirpath}")
-
-        plot_trajectory_heatmap(dirpath)
-        # plot_fixation_spatial_map(dirpath)
-        # plot_pupil_diameter(dirpath)
-        # plot_eyelid_aperture_over_time(dirpath)
-        # plot_saccade_velo_over_time(dirpath)
-        # plot_distance_between_pupils(dirpath)
+        plot_gaze_over_time(dirpath)
+        compare_filter_unfiltered_data(dirpath.replace('data_filtered', 'data_unfiltered'), dirpath)
+        plot_gaze_heatmap(dirpath)
+        plot_fixation_spatial_map(dirpath)
+        plot_fixation_duration_histogram(dirpath)
+        plot_pupil_diameter_over_time(dirpath)
+        plot_eyelid_aperture_over_time(dirpath)
+        plot_eyelid_angles_over_time(dirpath)
+        plot_distance_between_pupils_over_time(dirpath)
+        
+        breakpoint()

@@ -19,26 +19,43 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def clean_keystrokes(root_dir):
-    # Walk through all directories and files
+    """
+    Cleans all keystrokes.csv files in the given directory tree by:
+      - Removing rows with unwanted key names
+      - Removing the '_pressed' suffix from the 'name' column
+      - Overwriting the cleaned data back to the original file
+    """
+
+    # Define unwanted keys once for clarity
+    unwanted_keys = {'Tab_pressed', 'Shift_pressed', 'CapsLock_pressed', 'Enter_pressed'}
+
     for dirpath, _, filenames in os.walk(root_dir):
         for file in filenames:
             if file == "keystrokes.csv":
-                file_path = os.path.join(dirpath, file)                
+                file_path = os.path.join(dirpath, file)
                 try:
                     # Load CSV
                     df = pd.read_csv(file_path)
-    
-                    # Filter out unwanted rows
-                    df_clean = df[~df['name'].isin(['Tab_pressed', 'Shift_pressed', 'CapsLock_pressed', 'Enter_pressed'])]
+
+                    # Validate required column
+                    if 'name' not in df.columns:
+                        logger.warning(f"'name' column not found in {file_path}. Skipping.")
+                        continue
+
+                    # Filter out unwanted rows and make an explicit copy to avoid SettingWithCopyWarning
+                    df_clean = df[~df['name'].isin(unwanted_keys)].copy()
+
+                    # Remove '_pressed' suffix
                     df_clean['name'] = df_clean['name'].str.replace('_pressed', '', regex=False)
-                    
-                    if len(df) >= 31:
+
+                    if len(df_clean) >= 31:
                         logger.info(file_path)
+
                     # Save cleaned CSV back to same file
                     df_clean.to_csv(file_path, index=False)
 
                 except Exception as e:
-                    logger.info(f"Error processing {file_path}: {e}")
+                    logger.error(f"Error processing {file_path}: {e}", exc_info=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

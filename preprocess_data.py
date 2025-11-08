@@ -54,12 +54,12 @@ def run_pipeline(data_dir):
             continue
         
         logger.info(f"Proccessing {dirpath} ...")
-        
-        logger.info(f"Dropping rows ...")
-        drop_rows(dirpath)
 
         logger.info(f"Dropping columns ...")
         drop_columns(dirpath)
+        
+        logger.info(f"Dropping rows ...")
+        drop_rows(dirpath)
         
         logger.info(f"Adjusting timestamps ...")
         adjust_timestamps(dirpath)

@@ -5,6 +5,7 @@ import pandas as pd
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
+
 def plot_learning_curve(losses, epochs, save_path="results/plots/learning_curve.png"):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.figure(figsize=(6,4))
@@ -29,55 +30,138 @@ def plot_conf_matrix(y_true, y_pred, save_path="results/plots/confusion_matrix.p
     plt.show()
 
 
-def plot_trajectory_heatmap(data_path, plot_name="trajectory_heatmap.png"):
+def compare_filter_unfiltered_data(data_path_unfiltered, data_path_filtered, plot_name="comparison.png"):
+    gaze_unfiltered = pd.read_csv(data_path_unfiltered + '/gaze.csv')
+    gaze_filtered = pd.read_csv(data_path_filtered + '/gaze.csv')
+
+    ymin = gaze_unfiltered["gaze y [px]"].min()
+    ymax = gaze_unfiltered["gaze y [px]"].max()
+
+    figure, axes = plt.subplots(1, 2, figsize=(14, 6), sharex=True, sharey=True)
+
+    # --- Left: Unfiltered ---
+    axes[0].scatter(gaze_unfiltered["gaze x [px]"],gaze_unfiltered["gaze y [px]"])
+    axes[0].set_ylim(ymin, ymax)
+    axes[0].invert_yaxis()
+    axes[0].set_title("Unfiltered Gaze Points")
+    axes[0].set_xlabel("Gaze X [px]")
+    axes[0].set_ylabel("Gaze Y [px]")
+
+    # --- Right: Filtered ---
+    axes[1].scatter(gaze_filtered["gaze x [px]"],gaze_filtered["gaze y [px]"])
+    axes[1].set_ylim(ymin, ymax)
+    axes[1].invert_yaxis()
+    axes[1].set_title("Filtered Gaze Points")
+    axes[1].set_xlabel("Gaze X [px]")
+
+    folder_name = os.path.basename(data_path_filtered)
+    save_dir = os.path.join("results", "plots", folder_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, plot_name)
+
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
+    plt.savefig(save_path, bbox_inches="tight")
+    # plt.show()
+    # plt.close()
+
+
+def plot_gaze_heatmap(data_path, plot_name="gaze_heatmap.png"):
     gaze = pd.read_csv(data_path + '/gaze.csv')
-    plt.figure(figsize=(8,6))
-    plt.hist2d(gaze["gaze x [px]"], gaze["gaze y [px]"], bins=100, cmap="viridis")
-    plt.colorbar(label="Count")
-    plt.ylim(1200)
-    plt.gca().invert_yaxis()
-    plt.title("Gaze Point Density (2D Histogram)")
-    
+
+    ymin = gaze["gaze y [px]"].min()
+    ymax = gaze["gaze y [px]"].max()
+    xmin = gaze["gaze x [px]"].min()
+    xmax = gaze["gaze x [px]"].max()
+
+    cmap = plt.get_cmap("viridis").copy()
+    cmap.set_under(cmap(0))
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    h1 = ax.hist2d(
+        gaze["gaze x [px]"],
+        gaze["gaze y [px]"],
+        bins=100,
+        cmap=cmap,
+        range=[[xmin, xmax], [ymin, ymax]],
+        vmin=0.01
+    )
+
+    ax.set_ylim(ymin, ymax)
+    ax.invert_yaxis()
+    ax.set_title("Gaze Heatmap")
+    ax.set_xlabel("Gaze X [px]")
+    ax.set_ylabel("Gaze Y [px]")
+    fig.colorbar(h1[3], ax=ax, label="Count")
+
     folder_name = os.path.basename(data_path)
     save_dir = os.path.join("results", "plots", folder_name)
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, plot_name)
 
-    # Adjust layout for labels
     plt.tight_layout(rect=[0, 0.1, 1, 1])
-
-    # Save figure
     plt.savefig(save_path, bbox_inches="tight")
-
-    # Show and close figure
-    plt.show()
+    # plt.show()
+    # plt.close()
 
 
 def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
-    sns.set_theme(style="whitegrid")
-
-    # Load fixations
     fixations = pd.read_csv(os.path.join(data_path, 'fixations.csv'))
-    
-    g = sns.relplot(
+
+    sns.set_theme(style="white", context="talk")
+    plt.figure(figsize=(10, 8))
+    ax = sns.scatterplot(
         data=fixations,
         x="fixation x [px]",
         y="fixation y [px]",
         size="duration [ms]",
-        sizes=(10, 200),
+        sizes=(20, 400),
+        alpha=0.6,
+        edgecolor="w",
+        linewidth=0.5,
+        palette="viridis"
     )
 
-    # Invert y-axis so (0,0) is at the top-left corner
-    g.ax.invert_yaxis()
+    ax.set_xlim(fixations["fixation x [px]"].min(), fixations["fixation x [px]"].max())
+    ax.set_ylim(fixations["fixation y [px]"].min(), fixations["fixation y [px]"].max())
+    ax.invert_yaxis()
+    ax.xaxis.set_label_position('top')
+    ax.xaxis.tick_top()
+    ax.set_xlabel("Fixation X (px)", fontsize=12)
+    ax.set_ylabel("Fixation Y (px)", fontsize=12)
+    sns.despine(left=True, bottom=True)
+    plt.grid(True, which="minor", lw=0.25)
+    plt.grid(True, which="major", lw=0.5, alpha=0.3)
+    
+    folder_name = os.path.basename(data_path)
+    save_dir = os.path.join("results", "plots", folder_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, plot_name)
 
-    # g.ax.set_xlim(0, 1600)
-    # g.ax.set_ylim(1200, 0)
-    g.set(xscale="linear", yscale="linear")
-    g.ax.xaxis.set_label_position('top')
-    g.ax.xaxis.tick_top()  
-    g.ax.xaxis.grid(True, "minor", linewidth=.25)
-    g.ax.yaxis.grid(True, "minor", linewidth=.25)
-    g.despine(left=True, bottom=True)
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
+    plt.savefig(save_path, bbox_inches="tight")
+    # plt.show()
+    # plt.close()
+
+
+def plot_fixation_duration_histogram(data_path, plot_name="fixation_duration_hist.png"):
+    fixations = pd.read_csv(os.path.join(data_path, 'fixations.csv'))
+
+    sns.set_theme(style="whitegrid", context="talk")
+    plt.figure(figsize=(10, 6))
+    ax = sns.histplot(
+        data=fixations,
+        x="duration [ms]",
+        bins=30,
+        kde=True,
+        color="royalblue",
+        alpha=0.7
+    )
+
+    ax.set_xlabel("Fixation Duration (ms)", fontsize=12)
+    ax.set_ylabel("Count", fontsize=12)
+    ax.set_title("Distribution of Fixation Durations", fontsize=14, pad=15)
+    sns.despine()
 
     folder_name = os.path.basename(data_path)
     save_dir = os.path.join("results", "plots", folder_name)
@@ -86,196 +170,144 @@ def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
 
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
-    #plt.show()
-    #plt.close()
+    # plt.show()
+    # plt.close()
 
 
-def plot_pupil_diameter(data_path, plot_name="pupil_diameter_over_time.png"):
-    # Load data
+def plot_gaze_over_time(data_path, plot_name="gaze_x_y_over_time.png"):
+    gaze = pd.read_csv(f"{data_path}/gaze.csv")
+    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
+
+    gaze["timestamp [s]"] = gaze["timestamp [ns]"] / 1e9
+    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
+
+    fig, axes = plt.subplots(2, 1, figsize=(14, 5), sharex=True)
+
+    ax = axes[0]
+    ax.plot(gaze["timestamp [s]"], gaze["gaze x [px]"], color="blue")
+    ax.set_title("Gaze x Over Time")
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Gaze x [px]")
+
+    draw_keyboard_lines(ax, gaze, keys)
+
+    ax = axes[1]
+    ax.plot(gaze["timestamp [s]"], gaze["gaze y [px]"], color="orange")
+    ax.set_title("Gaze Y Over Time")
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Gaze Y [px]")
+
+    # draw_keyboard_lines(ax, gaze, keys)
+
+    folder_name = os.path.basename(data_path)
+    save_dir = os.path.join("results", "plots", folder_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, plot_name)
+
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
+    plt.savefig(save_path, bbox_inches="tight")
+    # plt.show()
+    # plt.close()
+
+
+def plot_pupil_diameter_over_time(data_path, plot_name="pupil_diameter_over_time.png"):
     eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
     keys = pd.read_csv(f"{data_path}/keystrokes.csv")
 
-    # Convert timestamps to seconds for readability
-    eye3d["time_s"] = eye3d["timestamp [ns]"] / 1e9
-    keys["time_s"] = keys["timestamp [ns]"] / 1e9
+    eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
+    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
 
     fig, ax = plt.subplots(figsize=(12, 5))
 
-    # Plot both eyes
-    ax.plot(eye3d["time_s"], eye3d["pupil diameter left [mm]"], label="Left Eye", color="blue")
-    ax.plot(eye3d["time_s"], eye3d["pupil diameter right [mm]"], label="Right Eye", color="orange")
+    ax.plot(eye3d["timestamp [s]"], eye3d["pupil diameter left [mm]"], label="Left Eye", color="blue")
+    ax.plot(eye3d["timestamp [s]"], eye3d["pupil diameter right [mm]"], label="Right Eye", color="orange")
 
-    # Labels and title
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Pupil Diameter [mm]")
     ax.set_title("Pupil Diameter Over Time (Both Eyes)")
     ax.legend()
 
-    # Add vertical lines for keystrokes
-    ax.axvline(x=eye3d["time_s"].min(), color="gray", linestyle="--", alpha=0.3)
-    for _, row in keys.iterrows():
-        ax.axvline(x=row["time_s"], color="gray", linestyle="--", alpha=0.3)
-    ax.axvline(x=eye3d["time_s"].max(), color="gray", linestyle="--", alpha=0.3)
-
-    # --- Add keystroke labels BELOW the x-axis ---
-    y_min, y_max = ax.get_ylim()
-    text_y = y_min - (y_max - y_min) * 0.15  # a bit below the axis
-
-    ax.text(eye3d["time_s"].min(), text_y, "Start", rotation=-45,
-            va="top", ha="center", fontsize=8, color="gray")
-    for _, row in keys.iterrows():
-        ax.text(row["time_s"], text_y, row["name"], rotation=0,
-                va="top", ha="center", fontsize=8, color="gray")
-    ax.text(eye3d["time_s"].max(), text_y, "Submit", rotation=-45,
-            va="top", ha="center", fontsize=8, color="gray")
+    # draw_keyboard_lines(ax, eye3d, keys)
     
-    # Adjust layout for label space
-    plt.tight_layout(rect=[0, 0.1, 1, 1])  # add bottom padding
-    ax.set_ylim(y_min, y_max)  # restore y-limits after adding text
-
     folder_name = os.path.basename(data_path)
     save_dir = os.path.join("results", "plots", folder_name)
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, plot_name)
 
-    # Adjust layout for labels
     plt.tight_layout(rect=[0, 0.1, 1, 1])
-
-    # Save figure
-    fig.savefig(save_path, bbox_inches="tight")
-
-    # Show and close figure
+    plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
-    # plt.close(fig)
-
-
-def plot_eyelid_aperture_over_time(data_path, plot_name="eyelid_over_time.png"):
-    # Load data
+    # plt.close()
+    
+    
+def plot_eyelid_aperture_over_time(data_path, plot_name="eyelid_aperture_over_time.png"):
     eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
     keys = pd.read_csv(f"{data_path}/keystrokes.csv")
 
-    # Convert timestamps to seconds for readability
-    eye3d["time_s"] = eye3d["timestamp [ns]"] / 1e9
-    keys["time_s"] = keys["timestamp [ns]"] / 1e9
+    eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
+    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
 
-    # Create figure
     fig, ax = plt.subplots(figsize=(12, 5))
 
-    # Plot both eyes
-    ax.plot(eye3d["time_s"], eye3d["eyelid aperture left [mm]"], label="Left Eye", color="blue")
-    ax.plot(eye3d["time_s"], eye3d["eyelid aperture right [mm]"], label="Right Eye", color="orange")
+    ax.plot(eye3d["timestamp [s]"], eye3d["eyelid aperture left [mm]"], label="Left Eye", color="blue")
+    ax.plot(eye3d["timestamp [s]"], eye3d["eyelid aperture right [mm]"], label="Right Eye", color="orange")
 
-    # Axis labels and title
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Eyelid Aperture [mm]")
     ax.set_title("Eyelid Aperture Over Time")
     ax.legend()
 
-    # Keystroke vertical lines
-    ax.axvline(x=eye3d["time_s"].min(), color="gray", linestyle="--", alpha=0.3)
-    for _, row in keys.iterrows():
-        ax.axvline(x=row["time_s"], color="gray", linestyle="--", alpha=0.3)
-    ax.axvline(x=eye3d["time_s"].max(), color="gray", linestyle="--", alpha=0.3)
-
-    # --- Add keystroke labels BELOW the x-axis ---
-    y_min, y_max = ax.get_ylim()
-    text_y = y_min - (y_max - y_min) * 0.15  # place labels slightly below the axis
-    
-    ax.text(eye3d["time_s"].min(), text_y, "Start", rotation=-45,
-            va="top", ha="center", fontsize=8, color="gray")
-    for _, row in keys.iterrows():
-        ax.text(row["time_s"], text_y, row["name"], rotation=0,
-                va="top", ha="center", fontsize=8, color="gray")
-    ax.text(eye3d["time_s"].max(), text_y, "Submit", rotation=-45,
-            va="top", ha="center", fontsize=8, color="gray")
-    # Add extra space below for labels
-    plt.tight_layout(rect=[0, 0.05, 1, 1])
-    ax.set_ylim(y_min, y_max)  # restore proper limits after adding text
+    # draw_keyboard_lines(ax, eye3d, keys)
 
     folder_name = os.path.basename(data_path)
     save_dir = os.path.join("results", "plots", folder_name)
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, plot_name)
 
-    # Adjust layout for labels
     plt.tight_layout(rect=[0, 0.1, 1, 1])
-
-    # Save figure
-    fig.savefig(save_path, bbox_inches="tight")
-
-    # Show and close figure
+    plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
-    # plt.close(fig)
+    # plt.close()
 
 
-def plot_saccade_velo_over_time(data_path, plot_name="saccades_velocity_over_time.png"):
-    saccades = pd.read_csv(data_path + '/saccades.csv')
-    keys = pd.read_csv(data_path + '/keystrokes.csv')
-    
-    saccades["start timestamp [ns]"] = saccades["start timestamp [ns]"] / 1e9
-    keys["time_s"] = keys["timestamp [ns]"] / 1e9
-    
-    fig, ax = plt.subplots(figsize=(12, 5))
-
-    # Plot both eyes
-    ax.plot(saccades["start timestamp [ns]"], saccades["mean velocity [px/s]"], label="Mean Velocity", color="blue")
-    ax.plot(saccades["start timestamp [ns]"], saccades["peak velocity [px/s]"], label="Peak Velocity", color="orange")
-
-    # Axis labels and title
-    ax.set_xlabel("Time [s]")
-    ax.set_ylabel("Velocity [px/s]")
-    ax.set_title("Saccade Velocities Over Time")
-    ax.legend()
-
-    # Keystroke vertical lines
-    ax.axvline(x=saccades["start timestamp [ns]"].min(), color="gray", linestyle="--", alpha=0.3)
-    for _, row in keys.iterrows():
-        ax.axvline(x=row["time_s"], color="gray", linestyle="--", alpha=0.3)
-    ax.axvline(x=saccades["start timestamp [ns]"].max(), color="gray", linestyle="--", alpha=0.3)
-
-    # --- Add keystroke labels BELOW the x-axis ---
-    y_min, y_max = ax.get_ylim()
-    text_y = y_min - (y_max - y_min) * 0.15 
-    
-    ax.text(saccades["start timestamp [ns]"].min(), text_y, "Start", rotation=-45,
-        va="top", ha="center", fontsize=8, color="gray")
-    for _, row in keys.iterrows():
-        ax.text(row["time_s"], text_y, row["name"], rotation=0,
-                va="top", ha="center", fontsize=8, color="gray")
-        
-    ax.text(saccades["start timestamp [ns]"].max(), text_y, "Submit", rotation=-45,
-            va="top", ha="center", fontsize=8, color="gray")
-    
-    # Add extra space below for labels
-    plt.tight_layout(rect=[0, 0.05, 1, 1])
-    ax.set_ylim(y_min, y_max)  # restore proper limits after adding text
-
-    folder_name = os.path.basename(data_path)
-
-    # Build save directory and path
-    save_dir = os.path.join("results", "plots", folder_name)
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Adjust layout for labels
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-
-    # Save figure
-    fig.savefig(save_path, bbox_inches="tight")
-
-    # Show and close figure
-    # plt.show()
-    # plt.close(fig)
-    
-    
-def plot_distance_between_pupils(data_path, plot_name="distance_between_pupils_over_time.png"):
-    # Load data
+def plot_eyelid_angles_over_time(data_path, plot_name="eyelid_angles_over_time.png"):
     eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
     keys = pd.read_csv(f"{data_path}/keystrokes.csv")
 
-    # Convert timestamps to seconds for readability
-    eye3d["time_s"] = eye3d["timestamp [ns]"] / 1e9
-    keys["time_s"] = keys["timestamp [ns]"] / 1e9
+    eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
+    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+
+    ax.plot(eye3d["timestamp [s]"], eye3d["eyelid angle top left [rad]"], label="Top Left")
+    ax.plot(eye3d["timestamp [s]"], eye3d["eyelid angle bottom left [rad]"], label="Bottom Left")
+    ax.plot(eye3d["timestamp [s]"], eye3d["eyelid angle top right [rad]"], label="Top Right")
+    ax.plot(eye3d["timestamp [s]"], eye3d["eyelid angle bottom right [rad]"], label="Bottom Right")
+
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Eyelid Angles [radians]")
+    ax.set_title("Eyelid Angles Over Time")
+    ax.legend()
+
+    # draw_keyboard_lines(ax, eye3d, keys)
+
+    folder_name = os.path.basename(data_path)
+    save_dir = os.path.join("results", "plots", folder_name)
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, plot_name)
+
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
+    plt.savefig(save_path, bbox_inches="tight")
+    # plt.show()
+    # plt.close()
+
+
+def plot_distance_between_pupils_over_time(data_path, plot_name="distance_between_pupils_over_time.png"):
+    eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
+    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
+
+    eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
+    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
 
     xl, yl, zl = eye3d['eyeball center left x [mm]'], eye3d['eyeball center left y [mm]'], eye3d['eyeball center left z [mm]']
     xr, yr, zr = eye3d['eyeball center right x [mm]'], eye3d['eyeball center right y [mm]'], eye3d['eyeball center right z [mm]']
@@ -284,47 +316,37 @@ def plot_distance_between_pupils(data_path, plot_name="distance_between_pupils_o
 
     fig, ax = plt.subplots(figsize=(12, 5))
 
-    # Plot both eyes
-    ax.plot(eye3d["time_s"], distance, color="blue")
+    ax.plot(eye3d["timestamp [s]"], distance, color="blue")
 
-    # Labels and title
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Distance Between Pupils [mm]")
     ax.set_title("Distance Between Pupils Over Time")
 
-    # Add vertical lines for keystrokes
-    ax.axvline(x=eye3d["time_s"].min(), color="gray", linestyle="--", alpha=0.3)
-    for _, row in keys.iterrows():
-        ax.axvline(x=row["time_s"], color="gray", linestyle="--", alpha=0.3)
-    ax.axvline(x=eye3d["time_s"].max(), color="gray", linestyle="--", alpha=0.3)
-
-    # --- Add keystroke labels BELOW the x-axis ---
-    y_min, y_max = ax.get_ylim()
-    text_y = y_min - (y_max - y_min) * 0.15  # a bit below the axis
-
-    ax.text(eye3d["time_s"].min(), text_y, "Start", rotation=-45,
-            va="top", ha="center", fontsize=8, color="gray")
-    for _, row in keys.iterrows():
-        ax.text(row["time_s"], text_y, row["name"], rotation=0,
-                va="top", ha="center", fontsize=8, color="gray")
-    ax.text(eye3d["time_s"].max(), text_y, "Submit", rotation=-45,
-            va="top", ha="center", fontsize=8, color="gray")
+    # draw_keyboard_lines(ax, eye3d, keys)
     
-    # Adjust layout for label space
-    plt.tight_layout(rect=[0, 0.1, 1, 1])  # add bottom padding
-    ax.set_ylim(y_min, y_max)  # restore y-limits after adding text
-
     folder_name = os.path.basename(data_path)
     save_dir = os.path.join("results", "plots", folder_name)
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, plot_name)
 
-    # Adjust layout for labels
     plt.tight_layout(rect=[0, 0.1, 1, 1])
-
-    # Save figure
-    fig.savefig(save_path, bbox_inches="tight")
-
-    # Show and close figure
-    plt.show()
-    # plt.close(fig)
+    plt.savefig(save_path, bbox_inches="tight")
+    # plt.show()
+    # plt.close()
+   
+    
+def draw_keyboard_lines(ax, df, keys):
+    ax.axvline(x=df["timestamp [s]"].min(), color="gray", linestyle="--", alpha=0.3)
+    for _, row in keys.iterrows():
+        ax.axvline(x=row["timestamp [s]"], color="gray", linestyle="--", alpha=0.3)
+    ax.axvline(x=df["timestamp [s]"].max(), color="gray", linestyle="--", alpha=0.3)
+    y_min, y_max = ax.get_ylim()
+    text_y = y_min - (y_max - y_min) * 0.15  
+    ax.text(df["timestamp [s]"].min(), text_y, "Start", rotation=-45,
+            va="top", ha="center", fontsize=8, color="gray")
+    for _, row in keys.iterrows():
+        ax.text(row["timestamp [s]"], text_y, row["name"], rotation=0,
+                va="top", ha="center", fontsize=8, color="gray")
+    ax.text(df["timestamp [s]"].max(), text_y, "Submit", rotation=-45,
+            va="top", ha="center", fontsize=8, color="gray")
+    ax.set_ylim(y_min, y_max) 

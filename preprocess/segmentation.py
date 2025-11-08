@@ -78,7 +78,7 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
             os.makedirs(save_dir, exist_ok=True)
             out_path = save_dir + '/' + filename
             segment.to_csv(out_path, index=False)
-            logger.info(f"Saved {len(segment)} rows -> {out_path}")
+            # logger.info(f"Saved {len(segment)} rows -> {out_path}")
 
             prev_t = current_t
             
@@ -87,6 +87,6 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
         os.makedirs(save_dir, exist_ok=True)
         out_path = save_dir + '/' + filename
         segment.to_csv(out_path, index=False)
-        logger.info(f"Saved {len(segment)} rows -> {out_path}")
+        # logger.info(f"Saved {len(segment)} rows -> {out_path}")
         
         
