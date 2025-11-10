@@ -1,92 +1,127 @@
 data:
-  path: "data/training/data.csv"
   csv_files:
-  - gaze.csv:
-        total_number_of_gaze_coordinates
-        gaze_x_median_px
-        gaze_y_median_px
-        gaze_azimuth_median_deg
-        gaze_elevation_median_deg
   - fixations.csv:
-        total_number_of_fixations
-        fixations_duration_median_ms
-        fixation_x_median_px
-        fixation_y_median_px
-        fixation_azimuth_median_deg
-        fixation_elevation_median_deg
+      total_number_of_fixations
+
+      mean_fixations_duration_ms
+      std_fixations_duration_ms
+
+      mean_fixation_x_px
+      std_fixation_x_px
+
+      mean_fixation_y_px
+      std_fixation_y_px
+
+      mean_fixation_azimuth_deg
+      std_fixation_azimuth_deg
+
+      mean_fixation_elevation_deg
+      std_fixation_elevation_deg
+
   - saccades.csv:
-        total_number_of_saccades
-        saccade_duration_median_ms
-        saccade_amplitude_median_px
-        saccade_amplitude_median_deg
-        saccade_mean_velocity_median_px_s
-        saccade_peak_velocity_median_px_s  
-  - 3d_eye_states.csv:
-        pupil_diameter_left_median_mm
-        pupil_diameter_right_median_mm
-        eye_ball_center_left_x_median_mm
-        eye_ball_center_left_y_median_mm
-        eye_ball_center_left_z_median_mm
-        eye_ball_center_right_x_median_mm
-        eye_ball_center_right_y_median_mm
-        eye_ball_center_right_z_median_mm
-        optical_axis_left_x_median
-        optical_axis_left_y_median
-        optical_axis_left_z_median
-        optical_axis_right_x_median
-        optical_axis_right_y_median
-        optical_axis_right_z_median
-        eyelid_angle_top_left_median_rad
-        eyelid_angle_bottom_left_median_rad
-        eyelid_angle_top_right_median_rad
-        eyelid_angle_bottom_right_median_rad
-        eyelid_aperture_left_median_mm
-        eyelid_aperture_right_median_mm
+      total_number_of_saccades
+
+      mean_saccade_duration_ms
+      std_saccade_duration_ms
+
+      mean_saccade_amplitude_px
+      std_saccade_amplitude_px
+
+      mean_saccade_amplitude_deg
+      std_saccade_amplitude_deg
+
+      mean_saccade_mean_velocity_px_s
+      std_saccade_mean_velocity_px_s
+
+      mean_saccade_peak_velocity_px_s  
+      std_saccade_peak_velocity_px_s 
+
   - blinks.csv:
-        total_number_of_blinks
-        blinks_duration_median_ms
+      total_number_of_blinks
+      
+      mean_blinks_duration_ms
+      std_blinks_duration_ms
+  - 3d_eye_states.csv:
+      mean_pupil_diameter_left_mm
+      std_pupil_diameter_left_mm
+
+      mean_pupil_diameter_right_mm
+      std_pupil_diameter_right_mm
+
+      max_min_difference_pupil_diameter_left_mm
+      max_min_difference_pupil_diameter_right_mm
+
+      mean_distance_between_pupils_center_mm
+      std_distance_between_pupils_center_mm
+
+      mean_eyelid_angle_top_left_rad
+      std_eyelid_angle_top_left_rad
+
+      mean_eyelid_angle_bottom_left_rad
+      std_eyelid_angle_bottom_left_rad
+
+      mean_eyelid_angle_top_right_rad
+      std_eyelid_angle_top_right_rad
+
+      mean_eyelid_angle_bottom_right_rad
+      std_eyelid_angle_bottom_right_rad
+
+      mean_eyelid_aperture_left_mm
+      std_eyelid_aperture_left_mm
+
+      mean_eyelid_aperture_right_mm
+      std_eyelid_aperture_right_mm
+
+      segment_duration_ms
 dataset:
   columns:
-    - total_number_of_gaze_coordinates
-    - gaze_x_median_px
-    - gaze_y_median_px
-    - gaze_azimuth_median_deg
-    - gaze_elevation_median_deg
-    - total_number_of_fixations
-    - fixations_duration_median_ms
-    - fixation_x_median_px
-    - fixation_y_median_px
-    - fixation_azimuth_median_deg
-    - fixation_elevation_median_deg
-    - total_number_of_saccades
-    - saccade_duration_median_ms
-    - saccade_amplitude_median_px
-    - saccade_amplitude_median_deg
-    - saccade_mean_velocity_median_px_s
-    - saccade_peak_velocity_median_px_s  
-    - pupil_diameter_left_median_mm
-    - pupil_diameter_right_median_mm
-#     - eye_ball_center_left_x_median_mm
-#     - eye_ball_center_left_y_median_mm
-#     - eye_ball_center_left_z_median_mm
-#     - eye_ball_center_right_x_median_mm
-#     - eye_ball_center_right_y_median_mm
-#     - eye_ball_center_right_z_median_mm
-#     - optical_axis_left_x_median
-#     - optical_axis_left_y_median
-#     - optical_axis_left_z_median
-#     - optical_axis_right_x_median
-#     - optical_axis_right_y_median
-#     - optical_axis_right_z_median
-    - eyelid_angle_top_left_median_rad
-    - eyelid_angle_bottom_left_median_rad
-    - eyelid_angle_top_right_median_rad
-    - eyelid_angle_bottom_right_median_rad
-    - eyelid_aperture_left_median_mm
-    - eyelid_aperture_right_median_mm
-    - total_number_of_blinks
-    - blinks_duration_median_ms
-    - recording_id
+    total_number_of_fixations
+    mean_fixations_duration_ms
+    std_fixations_duration_ms
+    mean_fixation_x_px
+    std_fixation_x_px
+    mean_fixation_y_px
+    std_fixation_y_px
+    mean_fixation_azimuth_deg
+    std_fixation_azimuth_deg
+    mean_fixation_elevation_deg
+    std_fixation_elevation_deg
+    total_number_of_saccades
+    mean_saccade_duration_ms
+    std_saccade_duration_ms
+    mean_saccade_amplitude_px
+    std_saccade_amplitude_px
+    mean_saccade_amplitude_deg
+    std_saccade_amplitude_deg
+    mean_saccade_mean_velocity_px_s
+    std_saccade_mean_velocity_px_s
+    mean_saccade_peak_velocity_px_s  
+    std_saccade_peak_velocity_px_s 
+    total_number_of_blinks  
+    mean_blinks_duration_ms
+    std_blinks_duration_ms
+    mean_pupil_diameter_left_mm
+    std_pupil_diameter_left_mm
+    mean_pupil_diameter_right_mm
+    std_pupil_diameter_right_mm
+    max_min_difference_pupil_diameter_left_mm
+    max_min_difference_pupil_diameter_right_mm
+    mean_distance_between_pupils_center_mm
+    std_distance_between_pupils_center_mm
+    mean_eyelid_angle_top_left_rad
+    std_eyelid_angle_top_left_rad
+    mean_eyelid_angle_bottom_left_rad
+    std_eyelid_angle_bottom_left_rad
+    mean_eyelid_angle_top_right_rad
+    std_eyelid_angle_top_right_rad
+    mean_eyelid_angle_bottom_right_rad
+    std_eyelid_angle_bottom_right_rad
+    mean_eyelid_aperture_left_mm
+    std_eyelid_aperture_left_mm
+    mean_eyelid_aperture_right_mm
+    std_eyelid_aperture_right_mm
+    segment_duration_ms
+    
   target: "label"
 model:
   hyperparameters:

@@ -1,6 +1,6 @@
 import os
+import argparse
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -107,6 +107,7 @@ def plot_gaze_heatmap(data_path, plot_name="gaze_heatmap.png"):
 
 def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
     fixations = pd.read_csv(os.path.join(data_path, 'fixations.csv'))
+    gaze = pd.read_csv(os.path.join(data_path, 'gaze.csv'))
 
     sns.set_theme(style="white", context="talk")
     plt.figure(figsize=(10, 8))
@@ -119,11 +120,11 @@ def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
         alpha=0.6,
         edgecolor="w",
         linewidth=0.5,
-        palette="viridis"
+        # palette="viridis"
     )
 
-    ax.set_xlim(fixations["fixation x [px]"].min(), fixations["fixation x [px]"].max())
-    ax.set_ylim(fixations["fixation y [px]"].min(), fixations["fixation y [px]"].max())
+    ax.set_xlim(gaze["gaze x [px]"].min(), gaze["gaze x [px]"].max())
+    ax.set_ylim(gaze["gaze y [px]"].min(), gaze["gaze y [px]"].max())
     ax.invert_yaxis()
     ax.xaxis.set_label_position('top')
     ax.xaxis.tick_top()
@@ -189,7 +190,7 @@ def plot_gaze_over_time(data_path, plot_name="gaze_x_y_over_time.png"):
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Gaze x [px]")
 
-    draw_keyboard_lines(ax, gaze, keys)
+    # draw_keyboard_lines(ax, gaze, keys)
 
     ax = axes[1]
     ax.plot(gaze["timestamp [s]"], gaze["gaze y [px]"], color="orange")
@@ -350,3 +351,37 @@ def draw_keyboard_lines(ax, df, keys):
     ax.text(df["timestamp [s]"].max(), text_y, "Submit", rotation=-45,
             va="top", ha="center", fontsize=8, color="gray")
     ax.set_ylim(y_min, y_max) 
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run full eye-tracking preprocessing pipeline"
+    )
+    parser.add_argument(
+        "--data_dir", 
+        required=True, 
+        help="Path to raw data folder"
+    )
+    args = parser.parse_args()
+    
+    for dirpath, dirnames, filenames in os.walk(args.data_dir):
+        # Skip any folder named 'Segmentation'
+        if "Segmentation" in dirnames:
+            dirnames.remove("Segmentation") 
+
+        # Only continue if there are CSV files in this folder
+        csv_files = [f for f in filenames if f.endswith(".csv")]
+        if not csv_files:
+            continue
+    # dirpath = 'data/genuine/orestis_117-86becbd0'
+        print(f"Processing folder: {dirpath}")
+        plot_gaze_over_time(dirpath)
+        compare_filter_unfiltered_data(dirpath.replace('data_filtered', 'data_unfiltered'), dirpath)
+        plot_gaze_heatmap(dirpath)
+        plot_fixation_spatial_map(dirpath)
+        plot_fixation_duration_histogram(dirpath)
+        plot_pupil_diameter_over_time(dirpath)
+        plot_eyelid_aperture_over_time(dirpath)
+        plot_eyelid_angles_over_time(dirpath)
+        plot_distance_between_pupils_over_time(dirpath)
+        
