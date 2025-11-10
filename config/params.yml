@@ -121,7 +121,6 @@ dataset:
     mean_eyelid_aperture_right_mm
     std_eyelid_aperture_right_mm
     segment_duration_ms
-    
   target: "label"
 model:
   hyperparameters:

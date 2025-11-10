@@ -45,10 +45,7 @@ def summarize_csv(file_path: str, file_name: str) -> pd.DataFrame:
     # ---- FIXATIONS ----
     if file_name == "fixations.csv":
         features[f"total_number_of_fixations"] = len(df)
-        
-        features[f"mean_fixations_duration_ms"] = df["duration [ms]"].mean()
-        features[f"std_fixations_duration_ms"] = df["duration [ms]"].std()
-        
+       
         features[f"mean_fixation_x_px"] = df["fixation x [px]"].mean()
         features[f"std_fixation_x_px"] = df["fixation x [px]"].std()
         
@@ -61,13 +58,17 @@ def summarize_csv(file_path: str, file_name: str) -> pd.DataFrame:
         features[f"mean_fixations_duration_ms"] = df["elevation [deg]"].mean()
         features[f"std_fixation_elevation_deg"] = df["elevation [deg]"].std()
         
+        features[f"mean_fixations_duration_ms"] = df["duration [ms]"].mean()
+        features[f"std_fixations_duration_ms"] = df["duration [ms]"].std()
+
+        
     # ---- SACCADES ----
     elif file_name == "saccades.csv":
         features[f"total_number_of_saccades"] = len(df)
         
         features[f"mean_saccade_duration_ms"] = df["duration [ms]"].mean()
         features[f"std_saccade_duration_ms"] = df["duration [ms]"].std()
-        
+
         features[f"mean_saccade_amplitude_px"] = df["amplitude [px]"].mean()
         features[f"std_saccade_amplitude_px"] = df["amplitude [px]"].std()
         

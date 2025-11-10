@@ -309,6 +309,9 @@ def plot_distance_between_pupils_over_time(data_path, plot_name="distance_betwee
 
     eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
     keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
+    eye3d["timestamp [s]"] -= eye3d["timestamp [s]"].min()
+    keys["timestamp [s]"] -= eye3d["timestamp [s]"]
+
 
     xl, yl, zl = eye3d['eyeball center left x [mm]'], eye3d['eyeball center left y [mm]'], eye3d['eyeball center left z [mm]']
     xr, yr, zr = eye3d['eyeball center right x [mm]'], eye3d['eyeball center right y [mm]'], eye3d['eyeball center right z [mm]']
@@ -318,12 +321,12 @@ def plot_distance_between_pupils_over_time(data_path, plot_name="distance_betwee
     fig, ax = plt.subplots(figsize=(12, 5))
 
     ax.plot(eye3d["timestamp [s]"], distance, color="blue")
-
+    ax.set_xlim(0, eye3d["timestamp [s]"].max())
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Distance Between Pupils [mm]")
     ax.set_title("Distance Between Pupils Over Time")
 
-    # draw_keyboard_lines(ax, eye3d, keys)
+    draw_keyboard_lines(ax, eye3d, keys)
     
     folder_name = os.path.basename(data_path)
     save_dir = os.path.join("results", "plots", folder_name)
@@ -331,8 +334,8 @@ def plot_distance_between_pupils_over_time(data_path, plot_name="distance_betwee
     save_path = os.path.join(save_dir, plot_name)
 
     plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    # plt.show()
+    # plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
     # plt.close()
    
     
@@ -357,31 +360,31 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run full eye-tracking preprocessing pipeline"
     )
-    parser.add_argument(
-        "--data_dir", 
-        required=True, 
-        help="Path to raw data folder"
-    )
+    # parser.add_argument(
+    #     "--data_dir", 
+    #     required=True, 
+    #     help="Path to raw data folder"
+    # )
     args = parser.parse_args()
     
-    for dirpath, dirnames, filenames in os.walk(args.data_dir):
-        # Skip any folder named 'Segmentation'
-        if "Segmentation" in dirnames:
-            dirnames.remove("Segmentation") 
+    # for dirpath, dirnames, filenames in os.walk(args.data_dir):
+    #     # Skip any folder named 'Segmentation'
+    #     if "Segmentation" in dirnames:
+    #         dirnames.remove("Segmentation") 
 
-        # Only continue if there are CSV files in this folder
-        csv_files = [f for f in filenames if f.endswith(".csv")]
-        if not csv_files:
-            continue
-    # dirpath = 'data/genuine/orestis_117-86becbd0'
-        print(f"Processing folder: {dirpath}")
-        plot_gaze_over_time(dirpath)
-        compare_filter_unfiltered_data(dirpath.replace('data_filtered', 'data_unfiltered'), dirpath)
-        plot_gaze_heatmap(dirpath)
-        plot_fixation_spatial_map(dirpath)
-        plot_fixation_duration_histogram(dirpath)
-        plot_pupil_diameter_over_time(dirpath)
-        plot_eyelid_aperture_over_time(dirpath)
-        plot_eyelid_angles_over_time(dirpath)
-        plot_distance_between_pupils_over_time(dirpath)
+    #     # Only continue if there are CSV files in this folder
+    #     csv_files = [f for f in filenames if f.endswith(".csv")]
+    #     if not csv_files:
+    #         continue
+    dirpath = 'data/impostors/alex_2-afad2bb6'
+    print(f"Processing folder: {dirpath}")
+    # plot_gaze_over_time(dirpath)
+    # compare_filter_unfiltered_data(dirpath.replace('data_filtered', 'data_unfiltered'), dirpath)
+    # plot_gaze_heatmap(dirpath)
+    # plot_fixation_spatial_map(dirpath)
+    # plot_fixation_duration_histogram(dirpath)
+    # plot_pupil_diameter_over_time(dirpath)
+    # plot_eyelid_aperture_over_time(dirpath)
+    # plot_eyelid_angles_over_time(dirpath)
+    plot_distance_between_pupils_over_time(dirpath)
         

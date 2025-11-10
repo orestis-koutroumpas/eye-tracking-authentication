@@ -56,22 +56,22 @@ def run_pipeline(data_dir):
         logger.info(f"Proccessing {dirpath} ...")
 
         logger.info(f"Dropping columns ...")
-        # drop_columns(dirpath)
+        drop_columns(dirpath)
         
         logger.info(f"Dropping rows ...")
-        # drop_rows(dirpath)
+        drop_rows(dirpath)
         
         logger.info(f"Adjusting timestamps ...")
-        # adjust_timestamps(dirpath)
+        adjust_timestamps(dirpath)
         
         logger.info("Segmenting data ...")
-        # segment_data_by_keystrokes(dirpath)
+        segment_data_by_keystrokes(dirpath)
         
         logger.info("Aggregating features ...")
         parent = Path(dirpath).parent
         label = 1 if parent.name == "genuine" else 0 
         segmented_dir = os.path.join(dirpath, 'Segmentation')
-        aggregate_segments(segmented_dir, label)        
+        aggregate_segments(segmented_dir, label)    
         
     logger.info("Pipeline finished successfully!")
 
