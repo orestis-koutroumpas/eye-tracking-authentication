@@ -46,58 +46,70 @@ def summarize_csv(file_path: str, file_name: str) -> pd.DataFrame:
     if file_name == "fixations.csv":
         features[f"total_number_of_fixations"] = len(df)
        
-        features[f"mean_fixation_x_px"] = df["fixation x [px]"].mean()
-        features[f"std_fixation_x_px"] = df["fixation x [px]"].std()
+        features[f"mean_fixations_x_px"] = df["fixation x [px]"].mean()
+        features[f"std_fixations_x_px"] = df["fixation x [px]"].std()
         
-        features[f"mean_fixation_y_px"] = df["fixation y [px]"].mean()
-        features[f"std_fixation_y_px"] = df["fixation y [px]"].std()
+        features[f"mean_fixations_y_px"] = df["fixation y [px]"].mean()
+        features[f"std_fixations_y_px"] = df["fixation y [px]"].std()
         
-        features[f"mean_fixation_azimuth_deg"] = df["azimuth [deg]"].mean()
-        features[f"std_fixation_azimuth_deg"] = df["azimuth [deg]"].std()
+        features[f"mean_fixations_azimuth_deg"] = df["azimuth [deg]"].mean()
+        features[f"std_fixations_azimuth_deg"] = df["azimuth [deg]"].std()
         
-        features[f"mean_fixations_duration_ms"] = df["elevation [deg]"].mean()
-        features[f"std_fixation_elevation_deg"] = df["elevation [deg]"].std()
+        features[f"mean_fixations_elevation_deg"] = df["elevation [deg]"].mean()
+        features[f"std_fixations_elevation_deg"] = df["elevation [deg]"].std()
         
         features[f"mean_fixations_duration_ms"] = df["duration [ms]"].mean()
         features[f"std_fixations_duration_ms"] = df["duration [ms]"].std()
+        features[f"max_fixations_duration_ms"] = df["duration [ms]"].max()
+        features[f"min_fixations_duration_ms"] = df["duration [ms]"].min()
 
+        df["distance_from_previous"] = np.sqrt(
+            (df["fixation x [px]"].diff() ** 2) +
+            (df["fixation y [px]"].diff() ** 2)
+        ).fillna(0)
+        features[f"mean_distance_from_previous"] = df["distance_from_previous"].mean()
         
     # ---- SACCADES ----
     elif file_name == "saccades.csv":
         features[f"total_number_of_saccades"] = len(df)
         
-        features[f"mean_saccade_duration_ms"] = df["duration [ms]"].mean()
-        features[f"std_saccade_duration_ms"] = df["duration [ms]"].std()
-
-        features[f"mean_saccade_amplitude_px"] = df["amplitude [px]"].mean()
-        features[f"std_saccade_amplitude_px"] = df["amplitude [px]"].std()
+        features[f"mean_saccades_duration_ms"] = df["duration [ms]"].mean()
+        features[f"std_saccades_duration_ms"] = df["duration [ms]"].std()
+        features[f"max_saccades_duration_ms"] = df["duration [ms]"].max()
+        features[f"min_saccades_duration_ms"] = df["duration [ms]"].min()
         
-        features[f"mean_saccade_amplitude_deg"] = df["amplitude [deg]"].mean()
-        features[f"std_saccade_amplitude_deg"] = df["amplitude [deg]"].std()
+        features[f"mean_saccades_amplitude_px"] = df["amplitude [px]"].mean()
+        features[f"std_saccades_amplitude_px"] = df["amplitude [px]"].std()
         
-        features[f"mean_saccade_mean_velocity_px_s"] = df["mean velocity [px/s]"].mean()
-        features[f"std_saccade_mean_velocity_px_s"] = df["mean velocity [px/s]"].std()
+        features[f"mean_saccades_amplitude_deg"] = df["amplitude [deg]"].mean()
+        features[f"std_saccades_amplitude_deg"] = df["amplitude [deg]"].std()
         
-        features[f"mean_saccade_peak_velocity_px_s"] = df["peak velocity [px/s]"].mean()
-        features[f"std_saccade_peak_velocity_px_s"] = df["peak velocity [px/s]"].std()
+        features[f"mean_saccades_mean_velocity_px_s"] = df["mean velocity [px/s]"].mean()
+        features[f"std_saccades_mean_velocity_px_s"] = df["mean velocity [px/s]"].std()
+        
+        features[f"mean_saccades_peak_velocity_px_s"] = df["peak velocity [px/s]"].mean()
+        features[f"std_saccades_peak_velocity_px_s"] = df["peak velocity [px/s]"].std()
 
     # ---- BLINKS ----
     elif file_name == "blinks.csv":
         features[f"total_number_of_blinks"] = len(df)
         features[f"mean_blinks_duration_ms"] = df["duration [ms]"].mean()
         features[f"std_blinks_duration_ms"] = df["duration [ms]"].std()
-        
+        features[f"max_blinks_duration_ms"] = df["duration [ms]"].max()
+        features[f"min_blinks_duration_ms"] = df["duration [ms]"].min()
     
     # ---- 3D EYE STATES ----
     elif file_name == "3d_eye_states.csv":
         features[f"mean_pupil_diameter_left_mm"] = df["pupil diameter left [mm]"].mean()
         features[f"std_pupil_diameter_left_mm"] = df["pupil diameter left [mm]"].std()
+        features[f"max_pupil_diameter_left_mm"] = df["pupil diameter left [mm]"].max()
+        features[f"min_pupil_diameter_left_mm"] = df["pupil diameter left [mm]"].min()
+
         
         features[f"mean_pupil_diameter_right_mm"] = df["pupil diameter right [mm]"].mean()
         features[f"std_pupil_diameter_right_mm"] = df["pupil diameter right [mm]"].std()
-        
-        features[f"max_min_difference_pupil_diameter_left_mm"] = df["pupil diameter left [mm]"].max() - df["pupil diameter left [mm]"].min()
-        features[f"max_min_difference_pupil_diameter_right_mm"] = df["pupil diameter right [mm]"].max() - df["pupil diameter right [mm]"].min()
+        features[f"max_pupil_diameter_right_mm"] = df["pupil diameter right [mm]"].max()
+        features[f"min_pupil_diameter_right_mm"] = df["pupil diameter right [mm]"].min()
         
         xl, yl, zl = df["eyeball center left x [mm]"], df["eyeball center left y [mm]"], df["eyeball center left z [mm]"]
         xr, yr, zr = df["eyeball center right x [mm]"], df["eyeball center right y [mm]"], df["eyeball center right z [mm]"]
@@ -105,6 +117,8 @@ def summarize_csv(file_path: str, file_name: str) -> pd.DataFrame:
         
         features[f"mean_distance_between_pupils_center_mm"] = df["distance_between_pupils_center_mm"].mean()
         features[f"std_distance_between_pupils_center_mm"] = df["distance_between_pupils_center_mm"].std()
+        features[f"max_distance_between_pupils_center_mm"] = df["distance_between_pupils_center_mm"].max()
+        features[f"min_distance_between_pupils_center_mm"] = df["distance_between_pupils_center_mm"].min()
         
         features[f"mean_eyelid_angle_top_left_rad"] = df["eyelid angle top left [rad]"].mean()
         features[f"std_eyelid_angle_top_left_rad"] = df["eyelid angle top left [rad]"].std()
@@ -120,9 +134,13 @@ def summarize_csv(file_path: str, file_name: str) -> pd.DataFrame:
         
         features[f"mean_eyelid_aperture_left_mm"] = df["eyelid aperture left [mm]"].mean()
         features[f"std_eyelid_aperture_left_mm"] = df["eyelid aperture left [mm]"].std()
+        features[f"max_eyelid_aperture_left_mm"] = df["eyelid aperture left [mm]"].max()
+        features[f"min_eyelid_aperture_left_mm"] = df["eyelid aperture left [mm]"].min()   
         
         features[f"mean_eyelid_aperture_right_mm"] = df["eyelid aperture right [mm]"].mean()
         features[f"std_eyelid_aperture_right_mm"] = df["eyelid aperture right [mm]"].std()
+        features[f"max_eyelid_aperture_right_mm"] = df["eyelid aperture right [mm]"].max()
+        features[f"min_eyelid_aperture_right_mm"] = df["eyelid aperture right [mm]"].min()
         
         features[f"segment_duration_ms"] = (df["timestamp [ns]"].max() - df["timestamp [ns]"].min()) / 1000000
         

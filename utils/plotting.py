@@ -3,19 +3,21 @@ import argparse
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import numpy as np
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 
-def plot_learning_curve(losses, epochs, save_path="results/plots/learning_curve.png"):
+def plot_learning_curve(train_losses, val_losses, epochs, save_path="results/plots/learning_curve.png"):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.figure(figsize=(6,4))
-    plt.plot(range(1, epochs+1), losses, color='tab:blue', lw=2)
+    plt.plot(range(1, epochs+1), train_losses, color='tab:blue', lw=2)
+    plt.plot(range(1, epochs+1), val_losses, color='tab:orange', lw=2)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.title("Training Loss Curve")
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(save_path)
+    # plt.savefig(save_path)
     plt.show()
 
 
@@ -26,10 +28,36 @@ def plot_conf_matrix(y_true, y_pred, save_path="results/plots/confusion_matrix.p
     disp.plot(cmap="Blues", values_format='d')
     plt.title("Confusion Matrix")
     plt.tight_layout()
-    plt.savefig(save_path)
+    # plt.savefig(save_path)
     plt.show()
 
+def plot_probabilities(probs, label):
+    # Meaning of each segment as given
+    segments = ["E", "y", "e", "T", "r", "a", "c", "k", "i", "n", "g", "2", "0", "2", "5",
+                "a", "P", "$", "n", "F", "-", "k", "c", "0", "!", "v", "L", "r", "%", "?", "Login"]
 
+    plt.figure(figsize=(14, 6))
+    bars = plt.bar(range(len(probs)), probs, color='royalblue', edgecolor='black', alpha=0.8)
+    
+    mean_prob = np.mean(probs)
+    plt.axhline(mean_prob, color='red', linestyle='--', linewidth=2, label=f'Mean = {mean_prob:.2f}')
+    
+    # Add labels and formatting
+    plt.title(f"Segment-level probabilities for one trial (Label = {label})", fontsize=14, weight='bold')
+    plt.xlabel("Segment (keystroke)", fontsize=12)
+    plt.ylabel("Predicted Probability (Legitimate)", fontsize=12)
+    plt.xticks(range(len(segments)), segments, rotation=45, ha='right', fontsize=10)
+    plt.ylim(0, 1.1)
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+
+    # Annotate bars with probability values
+    for bar, prob in zip(bars, probs):
+        plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02, 
+                 f"{prob:.2f}", ha='center', va='bottom', fontsize=8)
+
+    plt.tight_layout()
+    plt.show()
+    
 def compare_filter_unfiltered_data(data_path_unfiltered, data_path_filtered, plot_name="comparison.png"):
     gaze_unfiltered = pd.read_csv(data_path_unfiltered + '/gaze.csv')
     gaze_filtered = pd.read_csv(data_path_filtered + '/gaze.csv')

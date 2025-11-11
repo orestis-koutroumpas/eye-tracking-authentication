@@ -75,58 +75,77 @@ data:
       segment_duration_ms
 dataset:
   columns:
-    total_number_of_fixations
-    mean_fixations_duration_ms
-    std_fixations_duration_ms
-    mean_fixation_x_px
-    std_fixation_x_px
-    mean_fixation_y_px
-    std_fixation_y_px
-    mean_fixation_azimuth_deg
-    std_fixation_azimuth_deg
-    mean_fixation_elevation_deg
-    std_fixation_elevation_deg
-    total_number_of_saccades
-    mean_saccade_duration_ms
-    std_saccade_duration_ms
-    mean_saccade_amplitude_px
-    std_saccade_amplitude_px
-    mean_saccade_amplitude_deg
-    std_saccade_amplitude_deg
-    mean_saccade_mean_velocity_px_s
-    std_saccade_mean_velocity_px_s
-    mean_saccade_peak_velocity_px_s  
-    std_saccade_peak_velocity_px_s 
-    total_number_of_blinks  
-    mean_blinks_duration_ms
-    std_blinks_duration_ms
-    mean_pupil_diameter_left_mm
-    std_pupil_diameter_left_mm
-    mean_pupil_diameter_right_mm
-    std_pupil_diameter_right_mm
-    max_min_difference_pupil_diameter_left_mm
-    max_min_difference_pupil_diameter_right_mm
-    mean_distance_between_pupils_center_mm
-    std_distance_between_pupils_center_mm
-    mean_eyelid_angle_top_left_rad
-    std_eyelid_angle_top_left_rad
-    mean_eyelid_angle_bottom_left_rad
-    std_eyelid_angle_bottom_left_rad
-    mean_eyelid_angle_top_right_rad
-    std_eyelid_angle_top_right_rad
-    mean_eyelid_angle_bottom_right_rad
-    std_eyelid_angle_bottom_right_rad
-    mean_eyelid_aperture_left_mm
-    std_eyelid_aperture_left_mm
-    mean_eyelid_aperture_right_mm
-    std_eyelid_aperture_right_mm
-    segment_duration_ms
-  target: "label"
+    - total_number_of_fixations
+    - mean_fixations_x_px
+    - std_fixations_x_px
+    - mean_fixations_y_px
+    - std_fixations_y_px
+    - mean_fixations_azimuth_deg
+    - std_fixations_azimuth_deg
+    - mean_fixations_elevation_deg
+    - std_fixations_elevation_deg
+    - mean_fixations_duration_ms
+    - std_fixations_duration_ms
+    - max_fixations_duration_ms
+    - min_fixations_duration_ms
+    - mean_distance_from_previous
+    - total_number_of_saccades
+    - mean_saccades_duration_ms
+    - std_saccades_duration_ms
+    - max_saccades_duration_ms
+    - min_saccades_duration_ms
+    - mean_saccades_amplitude_px
+    - std_saccades_amplitude_px
+    - mean_saccades_amplitude_deg
+    - std_saccades_amplitude_deg
+    - mean_saccades_mean_velocity_px_s
+    - std_saccades_mean_velocity_px_s
+    - mean_saccades_peak_velocity_px_s  
+    - std_saccades_peak_velocity_px_s 
+    - total_number_of_blinks  
+    - mean_blinks_duration_ms
+    - std_blinks_duration_ms
+    - max_blinks_duration_ms
+    - min_blinks_duration_ms
+    - mean_pupil_diameter_left_mm
+    - std_pupil_diameter_left_mm
+    - max_pupil_diameter_left_mm
+    - min_pupil_diameter_left_mm
+    - mean_pupil_diameter_right_mm
+    - std_pupil_diameter_right_mm
+    - max_pupil_diameter_right_mm
+    - min_pupil_diameter_right_mm
+    - mean_distance_between_pupils_center_mm
+    - std_distance_between_pupils_center_mm
+    - max_distance_between_pupils_center_mm
+    - min_distance_between_pupils_center_mm
+    - mean_eyelid_angle_top_left_rad
+    - std_eyelid_angle_top_left_rad
+    - mean_eyelid_angle_bottom_left_rad
+    - std_eyelid_angle_bottom_left_rad
+    - mean_eyelid_angle_top_right_rad
+    - std_eyelid_angle_top_right_rad
+    - mean_eyelid_angle_bottom_right_rad
+    - std_eyelid_angle_bottom_right_rad
+    - mean_eyelid_aperture_left_mm
+    - std_eyelid_aperture_left_mm
+    - max_eyelid_aperture_left_mm
+    - min_eyelid_aperture_left_mm
+    - mean_eyelid_aperture_right_mm
+    - std_eyelid_aperture_right_mm
+    - max_eyelid_aperture_right_mm
+    - min_eyelid_aperture_right_mm
+    - segment_duration_ms
+  target: label
 model:
   hyperparameters:
     learning_rate: 0.001
-    batch_size: 64
-    epochs: 100
-    test_size: 0.25
-    validation_split: 0.2
-    early_stopping_patience: 10
+    batch_size: 16
+    max_epochs: 1000
+    patience: 10
+    validation_size: 0.15
+    test_size: 0.15
+  architecture:
+    hidden_size: 64
+    num_layers: 1
+    dropout: 0.3
