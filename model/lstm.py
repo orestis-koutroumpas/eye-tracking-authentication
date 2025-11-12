@@ -16,7 +16,8 @@ class LSTMClassifier(nn.Module):
         self.sigmoid = nn.Sigmoid()
     
     def forward(self, x):
-        out, _ = self.lstm(x)                 
-        logits = self.fc(out)                 
-        probs = self.sigmoid(logits).squeeze(-1)  
+        out, _ = self.lstm(x) 
+        last_out = out[:, -1, :]
+        logits = self.fc(last_out) 
+        probs = self.sigmoid(logits).squeeze(-1) 
         return probs

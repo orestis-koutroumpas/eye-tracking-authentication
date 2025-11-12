@@ -39,14 +39,14 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+  
     model = LSTMClassifier(
         input_size=len(config['dataset']['columns']), 
         hidden_size=config['model']['architecture']['hidden_size'],
         num_layers=config['model']['architecture']['num_layers'],
         dropout=config['model']['architecture']['dropout']
     ).to(device)
-    
+
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             probs = model(X_batch)  
-            preds_trial = probs.mean(dim=1)             
+            preds_trial = probs # .mean(dim=1)             
             loss = criterion(preds_trial, y_batch)
             
             optimizer.zero_grad()
@@ -76,7 +76,7 @@ if __name__ == "__main__":
             for X_batch, y_batch in val_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 probs = model(X_batch)
-                preds_trial = probs.mean(dim=1)
+                preds_trial = probs # .mean(dim=1)
                 loss = criterion(preds_trial, y_batch)
                 val_loss += loss.item() * X_batch.size(0)
         val_loss /= len(val_loader.dataset)
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         for X_batch, y_batch in test_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             segment_probs = model(X_batch)
-            trial_probs = segment_probs.mean(dim=1)
+            trial_probs = segment_probs # .mean(dim=1)
             all_preds.extend(trial_probs.cpu().numpy())
             all_labels.extend(y_batch.cpu().numpy())
 
@@ -116,11 +116,17 @@ if __name__ == "__main__":
     
     plot_conf_matrix(all_labels, pred_labels, save_path="results/plots/confusion_matrix.png")
 
+
     # for i in range(35):
+    
     #     sample_X, sample_y = test_dataset[i]
     #     sample_X = sample_X.unsqueeze(0).to(device)
 
-    #     with torch.no_grad():
-    #         segment_probs = model(sample_X).cpu().numpy().flatten()
+    #     probs_over_time = []
 
-    #     plot_probabilities(segment_probs, int(sample_y))
+    #     with torch.no_grad():
+    #         for t in range(1, sample_X.shape[1] + 1):
+    #             partial_seq = sample_X[:, :t, :]           # first t segments
+    #             prob = model(partial_seq)                    # output for partial input
+    #             probs_over_time.append(prob.item())
+    #     plot_probabilities(probs_over_time, int(sample_y))

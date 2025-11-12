@@ -31,19 +31,29 @@ def plot_conf_matrix(y_true, y_pred, save_path="results/plots/confusion_matrix.p
     # plt.savefig(save_path)
     plt.show()
 
+
 def plot_probabilities(probs, label):
     # Meaning of each segment as given
     segments = ["E", "y", "e", "T", "r", "a", "c", "k", "i", "n", "g", "2", "0", "2", "5",
                 "a", "P", "$", "n", "F", "-", "k", "c", "0", "!", "v", "L", "r", "%", "?", "Login"]
 
+    probs = np.array(probs)
+    threshold = 0.5
+
+    # --- Determine final decision ---
+    final_prob = probs[-1]
+    pred_label = 1 if final_prob > threshold else 0
+    correct = (pred_label == label)
+    
     plt.figure(figsize=(14, 6))
     bars = plt.bar(range(len(probs)), probs, color='royalblue', edgecolor='black', alpha=0.8)
     
-    mean_prob = np.mean(probs)
-    plt.axhline(mean_prob, color='red', linestyle='--', linewidth=2, label=f'Mean = {mean_prob:.2f}')
-    
     # Add labels and formatting
-    plt.title(f"Segment-level probabilities for one trial (Label = {label})", fontsize=14, weight='bold')
+    status = "Correctly Classified" if correct else "Misclassified"
+    plt.title(
+        f"Trial Classification: {status}\nTrue Label = {label}, Final Prob = {final_prob:.2f}, Pred = {pred_label}",
+        fontsize=15, weight='bold'
+    )
     plt.xlabel("Segment (keystroke)", fontsize=12)
     plt.ylabel("Predicted Probability (Legitimate)", fontsize=12)
     plt.xticks(range(len(segments)), segments, rotation=45, ha='right', fontsize=10)
@@ -57,6 +67,7 @@ def plot_probabilities(probs, label):
 
     plt.tight_layout()
     plt.show()
+  
     
 def compare_filter_unfiltered_data(data_path_unfiltered, data_path_filtered, plot_name="comparison.png"):
     gaze_unfiltered = pd.read_csv(data_path_unfiltered + '/gaze.csv')
