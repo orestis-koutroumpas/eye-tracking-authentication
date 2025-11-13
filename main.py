@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, precision_score
 import logging
 import yaml
 from data_loader import EyeTrackingDataset
@@ -32,7 +32,9 @@ if __name__ == "__main__":
      
     dataset = EyeTrackingDataset(root_dir='data/')
         
-    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+    train_dataset, test_dataset = random_split(dataset, [0.85, 0.15])
+    train_dataset, val_dataset = random_split(train_dataset, [0.8, 0.2])
+
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -107,8 +109,9 @@ if __name__ == "__main__":
     pred_labels = [1 if p > 0.5 else 0 for p in all_preds]
 
     acc = accuracy_score(all_labels, pred_labels)
+    prec = precision_score(all_labels, pred_labels)
     f1 = f1_score(all_labels, pred_labels)
-    auc = roc_auc_score(all_labels, all_preds)
+    auc = roc_auc_score(all_labels, pred_labels)
 
     logger.info(f"Accuracy: {acc:.4f}")
     logger.info(f"F1 Score: {f1:.4f}")

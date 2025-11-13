@@ -30,8 +30,8 @@ plt.show()
 
 
 # 2. Age distribution
-labels2 = ['18–20', '21–23', '24–28']
-sizes2 = [2, 13, 4]
+labels2 = ['19-21', '22–24', '25–28']
+sizes2 = [4, 12, 3]
 colors2 = [third_color, first_color, second_color]
 
 plt.figure(figsize=(5,5))
