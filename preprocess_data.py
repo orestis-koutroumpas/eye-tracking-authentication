@@ -11,8 +11,8 @@ import logging
 from pathlib import Path
 import pandas as pd
 
-from preprocess.filters import drop_columns, adjust_timestamps, drop_rows
-from preprocess.segmentation import segment_data_by_keystrokes
+from preprocess.filters import drop_columns, adjust_timestamps, synchronize_timestamps, drop_rows
+from preprocess.segmentation import segment_data_by_keystrokes, segment_data_by_phase
 from preprocess.features import aggregate_segments
 
 # Configure logger
@@ -64,15 +64,18 @@ def run_pipeline(data_dir):
         logger.info(f"Adjusting timestamps ...")
         adjust_timestamps(dirpath)
         
+        logger.info(f"Synchronize timestamps ...")
+        synchronize_timestamps(dirpath)
+
         logger.info("Segmenting data ...")
-        segment_data_by_keystrokes(dirpath)
+        segment_data_by_phase(dirpath)        
         
         logger.info("Aggregating features ...")
         parent = Path(dirpath).parent
-        label = 1 if parent.name == "genuine" else 0 
+        label = 1 if parent.name == "legitimate" else 0 
         segmented_dir = os.path.join(dirpath, 'Segmentation')
-        aggregate_segments(segmented_dir, label)    
-        
+        #aggregate_segments(segmented_dir, label)   
+
     logger.info("Pipeline finished successfully!")
 
 

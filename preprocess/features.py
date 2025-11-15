@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 with open("config/params.yml") as f:
     config = yaml.safe_load(f)
 
-csv_files = [list(d.keys())[0] for d in config['data']['csv_files']]
+csv_files = [d for d in config['data']['csv_files']]
  
 
 def summarize_csv(file_path: str, file_name: str) -> pd.DataFrame:
@@ -143,37 +143,6 @@ def summarize_csv(file_path: str, file_name: str) -> pd.DataFrame:
         features["min_eyelid_aperture_right_mm"] = df["eyelid aperture right [mm]"].min()
         
         features["segment_duration_ms"] = (df["timestamp [ns]"].max() - df["timestamp [ns]"].min()) / 1000000
-        
-    elif file_name == 'keystrokes.csv':
-        df['timestamp_ms'] = df['timestamp [ns]'] / 1e6
-        
-        # 1. Pre-input Time
-        pre_input_time = df['timestamp_ms'].iloc[0]
-        features["pre_input_time"] = pre_input_time
-        
-         # 2–3. Username
-        last_5_idx = df[df['name'] == '5_pressed'].index[-1]
-        username_duration = df.loc[last_5_idx, 'timestamp_ms'] - df['timestamp_ms'].iloc[0]
-        username_count = last_5_idx + 1
-        features["username_duration"] = username_duration
-        features["username_count"] = username_count
-
-        # 4–5. Password
-        first_a_after_5_idx = df[df.index > last_5_idx][df['name'] == 'a_pressed'].index[0]
-        qmark_idx = df[df['name'] == '?_pressed'].index[0]
-        password_duration = df.loc[qmark_idx, 'timestamp_ms'] - df.loc[first_a_after_5_idx, 'timestamp_ms']
-        password_count = qmark_idx - first_a_after_5_idx + 1
-        features["password_duration"] = password_duration
-        features["password_count"] = password_count
-        
-        # 6. Verification
-        enter_idx = df[df['name'] == 'Enter_pressed'].index[0]
-        verification_time = df.loc[enter_idx, 'timestamp_ms'] - df.loc[qmark_idx, 'timestamp_ms']
-        features["verification_time"] = verification_time
-
-        # 7. Total Duration
-        total_duration = df.loc[qmark_idx, 'timestamp_ms'] - df['timestamp_ms'].iloc[0]
-        features["total_duration"] = total_duration
 
     return pd.DataFrame([features]).fillna(0)
 

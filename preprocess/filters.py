@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 with open("config/params.yml") as f:
     config = yaml.safe_load(f)
 
-csv_files = [list(d.keys())[0] for d in config['data']['csv_files']]
+csv_files = [d for d in config['data']['csv_files']]
 
 
 def drop_columns(data_dir: str):
@@ -53,8 +53,8 @@ def drop_columns(data_dir: str):
         
 def adjust_timestamps(data_dir: str):
     """
-    Adjust all timestamp columns in CSV files by subtracting the recording start timestamp
-    from the events file.
+    Adjust all timestamp columns in CSV files by subtracting
+    the recording start timestamp from the events file.
 
     Parameters
     ----------
@@ -74,7 +74,7 @@ def adjust_timestamps(data_dir: str):
     logger.info(f"Recording start timestamp: {recording_start_ns}")
     # Process CSV files
     for fname in os.listdir(data_dir):
-        if fname not in csv_files:
+        if fname not in csv_files or fname == 'keystrokes.csv':
             continue
 
         fpath = os.path.join(data_dir, fname)
@@ -95,16 +95,70 @@ def adjust_timestamps(data_dir: str):
 
             if (diffs < 0).any():
                 logger.warning(f"Timestamps in column '{col}' appear already adjusted; no subtraction applied.")
-                continue
+                return
 
             df[col] = diffs
 
         df.to_csv(fpath, index=False)
         logger.info(f"Updated and saved {fname}")
-
+    
     logger.info("Done. All timestamp columns adjusted.")
 
-  
+
+def synchronize_timestamps(data_dir: str):
+    """
+    Synchronize all timestamp columns in CSV files by subtracting 
+    the first recorded timestamp from the gaze file.
+
+    Parameters
+    ----------
+    data_dir : str
+        Path to the directory containing CSV files.
+    """
+        
+    gaze_path = os.path.join(data_dir, "gaze.csv")
+    if not os.path.exists(gaze_path):
+        logger.error(f"Events file not found: {gaze_path}")
+        raise FileNotFoundError(f"Events file not found: {gaze_path}")
+
+    # Load events file and get recording start timestamp
+    gaze_df = pd.read_csv(gaze_path)
+
+    t0_ns = int(gaze_df.loc[0, "timestamp [ns]"])
+    logger.info(f"Recording first timestamp: {t0_ns}")
+    # Process CSV files
+    for fname in os.listdir(data_dir):
+        if fname not in csv_files:
+            continue
+
+        fpath = os.path.join(data_dir, fname)
+        logger.info(f"Processing {fname}...")
+
+        df = pd.read_csv(fpath)
+
+        # Find all columns containing "timestamp"
+        timestamp_cols = [c for c in df.columns if "timestamp" in c.lower()]
+
+        if not timestamp_cols:
+            logger.warning(f"No timestamp columns found in {fname}")
+            continue
+
+        # Subtract start time from each timestamp column
+        for col in timestamp_cols:
+            diffs = df[col].astype("int64") - t0_ns
+
+            if (diffs < 0).any():
+                logger.warning(f"Timestamps in column '{col}' appear already synchronized; no subtraction applied.")
+                return
+
+            df[col] = diffs
+
+        df.to_csv(fpath, index=False)
+        logger.info(f"Updated and saved {fname}")
+    
+    logger.info("Done. All timestamp columns are synchronized.")
+    
+    
 def drop_rows(data_dir: str):
     """
     Drop rows out of area of interest
@@ -133,7 +187,7 @@ def drop_rows(data_dir: str):
 
     # Now apply to other CSVs
     for fname in os.listdir(data_dir):
-        if fname not in csv_files or fname == 'gaze.csv':
+        if fname not in csv_files or fname == 'gaze.csv' or fname == 'keystrokes.csv':
             continue
 
         fpath = os.path.join(data_dir, fname)
