@@ -1,5 +1,4 @@
 import os
-import argparse
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -69,35 +68,61 @@ def plot_probabilities(probs, label):
     plt.show()
   
     
-def compare_filter_unfiltered_data(data_path_unfiltered, data_path_filtered, plot_name="comparison.png"):
-    gaze_unfiltered = pd.read_csv(data_path_unfiltered + '/gaze.csv')
-    gaze_filtered = pd.read_csv(data_path_filtered + '/gaze.csv')
+def compare_filter_unfiltered_data(data_path_unfiltered, data_path_filtered, plot_name="compare_data.png"):
+    fixation_unfiltered = pd.read_csv(data_path_unfiltered + '/fixations.csv')
+    fixation_filtered = pd.read_csv(data_path_filtered + '/fixations.csv')
 
-    ymin = gaze_unfiltered["gaze y [px]"].min()
-    ymax = gaze_unfiltered["gaze y [px]"].max()
+    ymin = fixation_unfiltered["fixation y [px]"].min() - 50
+    ymax = fixation_unfiltered["fixation y [px]"].max() + 50
 
     figure, axes = plt.subplots(1, 2, figsize=(14, 6), sharex=True, sharey=True)
 
     # --- Left: Unfiltered ---
-    axes[0].scatter(gaze_unfiltered["gaze x [px]"],gaze_unfiltered["gaze y [px]"])
+    axes[0].scatter(fixation_unfiltered["fixation x [px]"],fixation_unfiltered["fixation y [px]"])
     axes[0].set_ylim(ymin, ymax)
     axes[0].invert_yaxis()
-    axes[0].set_title("Unfiltered Gaze Points")
-    axes[0].set_xlabel("Gaze X [px]")
-    axes[0].set_ylabel("Gaze Y [px]")
+    axes[0].set_title("Unfiltered Fixations")
+    axes[0].set_xlabel("Fixation X [px]")
+    axes[0].set_ylabel("Fixation Y [px]")
 
     # --- Right: Filtered ---
-    axes[1].scatter(gaze_filtered["gaze x [px]"],gaze_filtered["gaze y [px]"])
+    axes[1].scatter(fixation_filtered["fixation x [px]"],fixation_filtered["fixation y [px]"])
     axes[1].set_ylim(ymin, ymax)
     axes[1].invert_yaxis()
-    axes[1].set_title("Filtered Gaze Points")
-    axes[1].set_xlabel("Gaze X [px]")
+    axes[1].set_title("Filtered Fixations")
+    axes[1].set_xlabel("Fixation X [px]")
 
-    folder_name = os.path.basename(data_path_filtered)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path_filtered, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
+    plt.tight_layout(rect=[0, 0.1, 1, 1])
+    plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+
+def plot_gaze_scanpath(data_path, plot_name="gaze_scanpath.png"):
+    gaze = pd.read_csv(data_path + '/gaze.csv')
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(gaze['gaze x [px]'], gaze['gaze y [px]'])
+    plt.xlabel("Gaze X")
+    plt.ylabel("Gaze Y")
+    plt.gca().invert_yaxis()
+    plt.title("Gaze ScanPath")
+    plt.tight_layout()
+
+    save_dir = os.path.join(data_path, "plots")
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
+    save_path = os.path.join(save_dir, plot_name)
+
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
@@ -133,11 +158,13 @@ def plot_gaze_heatmap(data_path, plot_name="gaze_heatmap.png"):
     ax.set_ylabel("Gaze Y [px]")
     fig.colorbar(h1[3], ax=ax, label="Count")
 
-    folder_name = os.path.basename(data_path)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
@@ -173,11 +200,13 @@ def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
     plt.grid(True, which="minor", lw=0.25)
     plt.grid(True, which="major", lw=0.5, alpha=0.3)
     
-    folder_name = os.path.basename(data_path)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
@@ -203,11 +232,13 @@ def plot_fixation_duration_histogram(data_path, plot_name="fixation_duration_his
     ax.set_title("Distribution of Fixation Durations", fontsize=14, pad=15)
     sns.despine()
 
-    folder_name = os.path.basename(data_path)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
@@ -239,11 +270,13 @@ def plot_gaze_over_time(data_path, plot_name="gaze_x_y_over_time.png"):
 
     # draw_keyboard_lines(ax, gaze, keys)
 
-    folder_name = os.path.basename(data_path)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
@@ -269,11 +302,13 @@ def plot_pupil_diameter_over_time(data_path, plot_name="pupil_diameter_over_time
 
     # draw_keyboard_lines(ax, eye3d, keys)
     
-    folder_name = os.path.basename(data_path)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
@@ -299,11 +334,13 @@ def plot_eyelid_aperture_over_time(data_path, plot_name="eyelid_aperture_over_ti
 
     # draw_keyboard_lines(ax, eye3d, keys)
 
-    folder_name = os.path.basename(data_path)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
@@ -331,11 +368,13 @@ def plot_eyelid_angles_over_time(data_path, plot_name="eyelid_angles_over_time.p
 
     # draw_keyboard_lines(ax, eye3d, keys)
 
-    folder_name = os.path.basename(data_path)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
     plt.savefig(save_path, bbox_inches="tight")
     # plt.show()
@@ -365,16 +404,18 @@ def plot_distance_between_pupils_over_time(data_path, plot_name="distance_betwee
     ax.set_ylabel("Distance Between Pupils [mm]")
     ax.set_title("Distance Between Pupils Over Time")
 
-    draw_keyboard_lines(ax, eye3d, keys)
+    # draw_keyboard_lines(ax, eye3d, keys)
     
-    folder_name = os.path.basename(data_path)
-    save_dir = os.path.join("results", "plots", folder_name)
+    save_dir = os.path.join(data_path, "plots")
     os.makedirs(save_dir, exist_ok=True)
+
+    # Full save path for the plot
     save_path = os.path.join(save_dir, plot_name)
 
+    # Save the figure
     plt.tight_layout(rect=[0, 0.1, 1, 1])
-    # plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
+    plt.savefig(save_path, bbox_inches="tight")
+    # plt.show()
     # plt.close()
    
     
@@ -396,34 +437,25 @@ def draw_keyboard_lines(ax, df, keys):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run full eye-tracking preprocessing pipeline"
-    )
-    # parser.add_argument(
-    #     "--data_dir", 
-    #     required=True, 
-    #     help="Path to raw data folder"
-    # )
-    args = parser.parse_args()
-    
-    # for dirpath, dirnames, filenames in os.walk(args.data_dir):
-    #     # Skip any folder named 'Segmentation'
-    #     if "Segmentation" in dirnames:
-    #         dirnames.remove("Segmentation") 
+    for dirpath, dirnames, filenames in os.walk('data'):
+        # Skip any folder named 'Segmentation'
+        if "Segmentation" in dirnames:
+            dirnames.remove("Segmentation") 
 
-    #     # Only continue if there are CSV files in this folder
-    #     csv_files = [f for f in filenames if f.endswith(".csv")]
-    #     if not csv_files:
-    #         continue
-    dirpath = 'data/impostors/alex_2-afad2bb6'
-    print(f"Processing folder: {dirpath}")
-    # plot_gaze_over_time(dirpath)
-    # compare_filter_unfiltered_data(dirpath.replace('data_filtered', 'data_unfiltered'), dirpath)
-    # plot_gaze_heatmap(dirpath)
-    # plot_fixation_spatial_map(dirpath)
-    # plot_fixation_duration_histogram(dirpath)
-    # plot_pupil_diameter_over_time(dirpath)
-    # plot_eyelid_aperture_over_time(dirpath)
-    # plot_eyelid_angles_over_time(dirpath)
-    plot_distance_between_pupils_over_time(dirpath)
+        # Only continue if there are CSV files in this folder
+        csv_files = [f for f in filenames if f.endswith(".csv")]
+        if not csv_files:
+            continue
+        #dirpath = 'data/genuine/orestis_23-18154ee5'
+        print(f"Processing folder: {dirpath}")
+        plot_gaze_over_time(dirpath)
+        compare_filter_unfiltered_data(dirpath.replace('data', 'data_unfiltered'), dirpath)
+        plot_gaze_heatmap(dirpath)
+        plot_gaze_scanpath(dirpath)
+        plot_fixation_spatial_map(dirpath)
+        plot_fixation_duration_histogram(dirpath)
+        plot_pupil_diameter_over_time(dirpath)
+        plot_eyelid_aperture_over_time(dirpath)
+        plot_eyelid_angles_over_time(dirpath)
+        plot_distance_between_pupils_over_time(dirpath)
         

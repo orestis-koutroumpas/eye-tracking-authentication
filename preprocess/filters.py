@@ -118,10 +118,9 @@ def drop_rows(data_dir: str):
     df_gaze = pd.read_csv(gaze_path)
     before = len(df_gaze)
 
-    # Compute the 75th percentile threshold
     threshold = df_gaze['gaze y [px]'].quantile(0.6)
 
-    # Define rows to drop: above both the quantile threshold and 900 px
+    # Define rows to drop: above both the quantile threshold and 850 px
     mask_to_drop = (df_gaze['gaze y [px]'] > threshold) & (df_gaze['gaze y [px]'] > 850)
     timestamps_to_drop = df_gaze.loc[mask_to_drop, 'timestamp [ns]']
 

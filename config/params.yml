@@ -41,6 +41,7 @@ data:
       
       mean_blinks_duration_ms
       std_blinks_duration_ms
+
   - 3d_eye_states.csv:
       mean_pupil_diameter_left_mm
       std_pupil_diameter_left_mm
@@ -73,6 +74,10 @@ data:
       std_eyelid_aperture_right_mm
 
       segment_duration_ms
+
+  - keystrokes.csv:
+      total_time
+      
 dataset:
   columns:
     - total_number_of_fixations
