@@ -102,11 +102,13 @@ if __name__ == "__main__":
     print(f"Data Shape: {X_train.shape}\n")
 
     # # KNN
-    knn_pipeline = Pipeline([
-        ("scaler", StandardScaler()),
-        ("select", SelectKBest(score_func=f_classif)),
-        ("clf", KNeighborsClassifier())
-    ])
+    knn_pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("select", SelectKBest(score_func=f_classif)),
+            ("clf", KNeighborsClassifier()),
+        ]
+    )
 
     knn_grid = {
         "select__k": [5, 10, 20, 30, 50, "all"],
@@ -124,16 +126,22 @@ if __name__ == "__main__":
     print("Best KNN params:", knn_clf.best_params_)
 
     # Define the SVM pipeline with RFECV feature selection
-    svm_rfecv_pipeline = Pipeline([
-        ("scaler", StandardScaler()),
-        ("feature_selector", RFECV(
-            estimator=SVC(kernel="linear", probability=True, random_state=42),
-            step=1,  # number of features removed at each iteration
-            cv=5,
-            scoring='roc_auc',
-            n_jobs=-1)),
-        ("clf", SVC(kernel="rbf", probability=True, random_state=42))
-    ])
+    svm_rfecv_pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            (
+                "feature_selector",
+                RFECV(
+                    estimator=SVC(kernel="linear", probability=True, random_state=42),
+                    step=1,  # number of features removed at each iteration
+                    cv=5,
+                    scoring="roc_auc",
+                    n_jobs=-1,
+                ),
+            ),
+            ("clf", SVC(kernel="rbf", probability=True, random_state=42)),
+        ]
+    )
 
     # Define parameters grid for GridSearchCV including SVM hyperparameters
     param_grid = {
@@ -147,7 +155,7 @@ if __name__ == "__main__":
         param_grid=param_grid,
         scoring="roc_auc",
         cv=5,
-        n_jobs=-1
+        n_jobs=-1,
     )
 
     # Fit model on training data (X_train, y_train must be defined)
@@ -156,18 +164,24 @@ if __name__ == "__main__":
     svm_acc, svm_prec, svm_rec, svm_f1, svm_far, svm_frr, svm_eer = evaluate_model(
         "SVM", svm_clf, X_test, y_test
     )
-    print("Number of selected features:", svm_clf.best_estimator_.named_steps["feature_selector"].n_features_)
+    print(
+        "Number of selected features:",
+        svm_clf.best_estimator_.named_steps["feature_selector"].n_features_,
+    )
     print("Best SVM params:", svm_clf.best_params_)
 
     # XGBoost
-    xgb_pipeline = Pipeline([
-        ("select", SelectKBest(score_func=f_classif)),
-        ("clf", xgb.XGBClassifier(
-            random_state=42,
-            objective="binary:logistic",
-            eval_metric="logloss"
-        )),
-    ])
+    xgb_pipeline = Pipeline(
+        [
+            ("select", SelectKBest(score_func=f_classif)),
+            (
+                "clf",
+                xgb.XGBClassifier(
+                    random_state=42, objective="binary:logistic", eval_metric="logloss"
+                ),
+            ),
+        ]
+    )
 
     xgb_grid = {
         "select__k": [5, 10, 20, 30, 50, "all"],
@@ -186,12 +200,13 @@ if __name__ == "__main__":
     )
     print("Best XGBoost params:", xgb_clf.best_params_)
 
-
     # Random Forest
-    rf_pipeline = Pipeline([
-        ("select", SelectKBest(score_func=f_classif)),
-        ("clf", RandomForestClassifier(random_state=42)),
-    ])
+    rf_pipeline = Pipeline(
+        [
+            ("select", SelectKBest(score_func=f_classif)),
+            ("clf", RandomForestClassifier(random_state=42)),
+        ]
+    )
 
     rf_grid = {
         "select__k": [5, 10, 20, 30, 50, "all"],
@@ -216,13 +231,15 @@ if __name__ == "__main__":
     nb_acc, nb_prec, nb_rec, nb_f1, nb_far, nb_frr, nb_eer = evaluate_model(
         "Gaussian NB", nb_clf, X_test, y_test
     )
-    
+
     # MLP
-    mlp_pipeline = Pipeline([
-        ("scaler", StandardScaler()),
-        ("select", SelectKBest(score_func=f_classif)),
-        ("clf", MLPClassifier(random_state=42, max_iter=5000)),
-    ])
+    mlp_pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("select", SelectKBest(score_func=f_classif)),
+            ("clf", MLPClassifier(random_state=42, max_iter=5000)),
+        ]
+    )
 
     mlp_grid = {
         "select__k": [5, 10, 20, 30, 50, "all"],

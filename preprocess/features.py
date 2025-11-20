@@ -159,9 +159,9 @@ def aggregate_phases(data_dir: str, phase: str) -> None:
     features["max_distance_from_previous_px"] = fixations[
         "euclidian distance from previous [px]"
     ].max()
-    features["min_distance_from_previous_px"] = fixations[
-        "euclidian distance from previous [px]"
-    ].iloc[1:].min()
+    features["min_distance_from_previous_px"] = (
+        fixations["euclidian distance from previous [px]"].iloc[1:].min()
+    )
 
     features["median_angle_from_previous_rad"] = fixations[
         "angle from previous [rad]"

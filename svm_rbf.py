@@ -31,16 +31,22 @@ if __name__ == "__main__":
     print(f"Train/Test Split: {train_pct:.2f}% train  |  {test_pct:.2f}% test\n")
     print(f"Data Shape: {X_train.shape}\n")
 
-    svm_rfecv_pipeline = Pipeline([
-        ("scaler", StandardScaler()),
-        ("feature_selector", RFECV(
-            estimator=SVC(kernel="rbf", probability=True, random_state=42),
-            step=1,  # number of features removed at each iteration
-            cv=5,
-            scoring='roc_auc',
-            n_jobs=-1)),
-        ("clf", SVC(kernel="rbf", probability=True, random_state=42))
-    ])
+    svm_rfecv_pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            (
+                "feature_selector",
+                RFECV(
+                    estimator=SVC(kernel="rbf", probability=True, random_state=42),
+                    step=1,  # number of features removed at each iteration
+                    cv=5,
+                    scoring="roc_auc",
+                    n_jobs=-1,
+                ),
+            ),
+            ("clf", SVC(kernel="rbf", probability=True, random_state=42)),
+        ]
+    )
 
     # Define parameters grid for GridSearchCV including SVM hyperparameters
     param_grid = {
@@ -54,7 +60,7 @@ if __name__ == "__main__":
         param_grid=param_grid,
         scoring="roc_auc",
         cv=5,
-        n_jobs=-1
+        n_jobs=-1,
     )
 
     # Fit model on training data (X_train, y_train must be defined)
@@ -63,5 +69,8 @@ if __name__ == "__main__":
     svm_acc, svm_prec, svm_rec, svm_f1, svm_far, svm_frr, svm_eer = evaluate_model(
         "SVM", svm_clf, X_test, y_test
     )
-    print("Number of selected features:", svm_clf.best_estimator_.named_steps["feature_selector"].n_features_)
+    print(
+        "Number of selected features:",
+        svm_clf.best_estimator_.named_steps["feature_selector"].n_features_,
+    )
     print("Best SVM params:", svm_clf.best_params_)
