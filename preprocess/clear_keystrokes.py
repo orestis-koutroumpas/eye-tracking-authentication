@@ -12,11 +12,11 @@ import argparse
 
 # Configure logger
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
 logger = logging.getLogger(__name__)
+
 
 def clean_keystrokes(root_dir):
     """
@@ -26,7 +26,12 @@ def clean_keystrokes(root_dir):
     """
 
     # Define unwanted keys once for clarity
-    unwanted_keys = {'Tab_pressed', 'Shift_pressed', 'CapsLock_pressed', 'Enter_pressed'}
+    unwanted_keys = {
+        "Tab_pressed",
+        "Shift_pressed",
+        "CapsLock_pressed",
+        "Enter_pressed",
+    }
 
     for dirpath, _, filenames in os.walk(root_dir):
         for file in filenames:
@@ -37,15 +42,19 @@ def clean_keystrokes(root_dir):
                     df = pd.read_csv(file_path)
 
                     # Validate required column
-                    if 'name' not in df.columns:
-                        logger.warning(f"'name' column not found in {file_path}. Skipping.")
+                    if "name" not in df.columns:
+                        logger.warning(
+                            f"'name' column not found in {file_path}. Skipping."
+                        )
                         continue
 
                     # Filter out unwanted rows and make an explicit copy to avoid SettingWithCopyWarning
-                    df_clean = df[~df['name'].isin(unwanted_keys)].copy()
+                    df_clean = df[~df["name"].isin(unwanted_keys)].copy()
 
                     # Remove '_pressed' suffix
-                    df_clean['name'] = df_clean['name'].str.replace('_pressed', '', regex=False)
+                    df_clean["name"] = df_clean["name"].str.replace(
+                        "_pressed", "", regex=False
+                    )
 
                     if len(df_clean) >= 31:
                         logger.info(file_path)
@@ -105,22 +114,12 @@ def remove_Shift(root_dir):
             # Save cleaned dataframe
             cleaned = df.loc[keep_indices].reset_index(drop=True)
             # Remove '_pressed' suffix
-            cleaned['name'] = cleaned['name'].str.replace('_pressed', '', regex=False)
+            cleaned["name"] = cleaned["name"].str.replace("_pressed", "", regex=False)
             cleaned.to_csv(file_path, index=False)
 
             logger.info(f"Cleaned Shift sequences in {file_path}")
-                    
-                    
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run full eye-tracking preprocessing pipeline"
-    )
-    parser.add_argument(
-        "--data_dir", 
-        required=True, 
-        help="Path to raw data folder"
-    )
-    args = parser.parse_args()
-    
     # clean_keystrokes(args.data_dir)
-    remove_Shift(args.data_dir)
+    remove_Shift("data")

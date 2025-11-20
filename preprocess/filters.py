@@ -8,6 +8,7 @@ Drop unecessery columns like section id, recording id, worn, etc.
 Adjust timestamps using events.start time
 
 """
+
 import os
 import logging
 import pandas as pd
@@ -16,7 +17,7 @@ import yaml
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 with open("config/params.yml") as f:
     config = yaml.safe_load(f)
 
-csv_files = [d for d in config['data']['csv_files']]
+csv_files = [d for d in config["data"]["csv_files"]]
 
 
 def drop_columns(data_dir: str):
@@ -34,12 +35,12 @@ def drop_columns(data_dir: str):
         "worn",
     ]
     for fname in os.listdir(data_dir):
-        if fname not in csv_files:
+        if fname not in csv_files or fname == "keystrokes.csv":
             continue
         fpath = os.path.join(data_dir, fname)
         logger.info(f"Processing {fname}...")
         df = pd.read_csv(fpath)
-        
+
         # Drop columns if present
         existing = [c for c in columns_to_drop if c in df.columns]
         if existing:
@@ -49,8 +50,8 @@ def drop_columns(data_dir: str):
             logger.info(f"Updated and saved {fname}")
         else:
             logger.info("Columns already dropped")
-   
-        
+
+
 def adjust_timestamps(data_dir: str):
     """
     Adjust all timestamp columns in CSV files by subtracting
@@ -61,7 +62,7 @@ def adjust_timestamps(data_dir: str):
     data_dir : str
         Path to the directory containing CSV files.
     """
-        
+
     events_path = os.path.join(data_dir, "events.csv")
     if not os.path.exists(events_path):
         logger.error(f"Events file not found: {events_path}")
@@ -74,7 +75,7 @@ def adjust_timestamps(data_dir: str):
     logger.info(f"Recording start timestamp: {recording_start_ns}")
     # Process CSV files
     for fname in os.listdir(data_dir):
-        if fname not in csv_files or fname == 'keystrokes.csv':
+        if fname not in csv_files or fname == "keystrokes.csv":
             continue
 
         fpath = os.path.join(data_dir, fname)
@@ -94,20 +95,22 @@ def adjust_timestamps(data_dir: str):
             diffs = df[col].astype("int64") - recording_start_ns
 
             if (diffs < 0).any():
-                logger.warning(f"Timestamps in column '{col}' appear already adjusted; no subtraction applied.")
+                logger.warning(
+                    f"Timestamps in column '{col}' appear already adjusted; no subtraction applied."
+                )
                 return
 
             df[col] = diffs
 
         df.to_csv(fpath, index=False)
         logger.info(f"Updated and saved {fname}")
-    
+
     logger.info("Done. All timestamp columns adjusted.")
 
 
 def synchronize_timestamps(data_dir: str):
     """
-    Synchronize all timestamp columns in CSV files by subtracting 
+    Synchronize all timestamp columns in CSV files by subtracting
     the first recorded timestamp from the gaze file.
 
     Parameters
@@ -115,7 +118,7 @@ def synchronize_timestamps(data_dir: str):
     data_dir : str
         Path to the directory containing CSV files.
     """
-        
+
     gaze_path = os.path.join(data_dir, "gaze.csv")
     if not os.path.exists(gaze_path):
         logger.error(f"Events file not found: {gaze_path}")
@@ -148,17 +151,19 @@ def synchronize_timestamps(data_dir: str):
             diffs = df[col].astype("int64") - t0_ns
 
             if (diffs < 0).any():
-                logger.warning(f"Timestamps in column '{col}' appear already synchronized; no subtraction applied.")
+                logger.warning(
+                    f"Timestamps in column '{col}' appear already synchronized; no subtraction applied."
+                )
                 return
 
             df[col] = diffs
 
         df.to_csv(fpath, index=False)
         logger.info(f"Updated and saved {fname}")
-    
+
     logger.info("Done. All timestamp columns are synchronized.")
-    
-    
+
+
 def drop_rows(data_dir: str):
     """
     Drop rows out of area of interest
@@ -168,15 +173,15 @@ def drop_rows(data_dir: str):
     """
 
     logger.info("Processing gaze.csv...")
-    gaze_path = os.path.join(data_dir, 'gaze.csv')
+    gaze_path = os.path.join(data_dir, "gaze.csv")
     df_gaze = pd.read_csv(gaze_path)
     before = len(df_gaze)
 
-    threshold = df_gaze['gaze y [px]'].quantile(0.6)
+    threshold = df_gaze["gaze y [px]"].quantile(0.6)
 
     # Define rows to drop: above both the quantile threshold and 850 px
-    mask_to_drop = (df_gaze['gaze y [px]'] > threshold) & (df_gaze['gaze y [px]'] > 850)
-    timestamps_to_drop = df_gaze.loc[mask_to_drop, 'timestamp [ns]']
+    mask_to_drop = (df_gaze["gaze y [px]"] > threshold) & (df_gaze["gaze y [px]"] > 850)
+    timestamps_to_drop = df_gaze.loc[mask_to_drop, "timestamp [ns]"]
 
     # Keep only rows that don't meet both conditions
     df = df_gaze[~mask_to_drop]
@@ -187,7 +192,7 @@ def drop_rows(data_dir: str):
 
     # Now apply to other CSVs
     for fname in os.listdir(data_dir):
-        if fname not in csv_files or fname == 'gaze.csv' or fname == 'keystrokes.csv':
+        if fname not in csv_files or fname == "gaze.csv" or fname == "keystrokes.csv":
             continue
 
         fpath = os.path.join(data_dir, fname)
@@ -195,16 +200,17 @@ def drop_rows(data_dir: str):
 
         df = pd.read_csv(fpath)
 
-        if 'timestamp [ns]' in df.columns:
+        if "timestamp [ns]" in df.columns:
             before = len(df)
-            df = df[~df['timestamp [ns]'].isin(timestamps_to_drop)]
+            df = df[~df["timestamp [ns]"].isin(timestamps_to_drop)]
             after = len(df)
             logger.info(f"Dropped {before - after} from {before} rows for {fname}")
 
-        elif {'start timestamp [ns]', 'end timestamp [ns]'}.issubset(df.columns):
+        elif {"start timestamp [ns]", "end timestamp [ns]"}.issubset(df.columns):
             before = len(df)
-            mask = df['start timestamp [ns]'].isin(timestamps_to_drop) | \
-                   df['end timestamp [ns]'].isin(timestamps_to_drop)
+            mask = df["start timestamp [ns]"].isin(timestamps_to_drop) | df[
+                "end timestamp [ns]"
+            ].isin(timestamps_to_drop)
             df = df[~mask]
             after = len(df)
             logger.info(f"Dropped {before - after} from {before} rows for {fname}")

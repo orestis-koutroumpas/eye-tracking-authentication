@@ -6,23 +6,13 @@ data:
   - blinks.csv
   - 3d_eye_states.csv
   - keystrokes.csv
-      
 dataset:
   columns:
     - total_number_of_fixations
-    - mean_fixations_x_px
-    - std_fixations_x_px
-    - mean_fixations_y_px
-    - std_fixations_y_px
-    - mean_fixations_azimuth_deg
-    - std_fixations_azimuth_deg
-    - mean_fixations_elevation_deg
-    - std_fixations_elevation_deg
     - mean_fixations_duration_ms
     - std_fixations_duration_ms
     - max_fixations_duration_ms
     - min_fixations_duration_ms
-    - mean_distance_from_previous
     - total_number_of_saccades
     - mean_saccades_duration_ms
     - std_saccades_duration_ms
@@ -53,14 +43,6 @@ dataset:
     - std_distance_between_pupils_center_mm
     - max_distance_between_pupils_center_mm
     - min_distance_between_pupils_center_mm
-    - mean_eyelid_angle_top_left_rad
-    - std_eyelid_angle_top_left_rad
-    - mean_eyelid_angle_bottom_left_rad
-    - std_eyelid_angle_bottom_left_rad
-    - mean_eyelid_angle_top_right_rad
-    - std_eyelid_angle_top_right_rad
-    - mean_eyelid_angle_bottom_right_rad
-    - std_eyelid_angle_bottom_right_rad
     - mean_eyelid_aperture_left_mm
     - std_eyelid_aperture_left_mm
     - max_eyelid_aperture_left_mm
@@ -69,7 +51,90 @@ dataset:
     - std_eyelid_aperture_right_mm
     - max_eyelid_aperture_right_mm
     - min_eyelid_aperture_right_mm
-    - segment_duration_ms
+  columns_to_drop:
+    - dataset
+    # - screen_fixations
+    # - screen_time_s
+    # - keyboard_fixations
+    # - keyboard_time_s
+    # - transitions
+    # - path_length_px
+    # - mean_distance_from_previous_px
+    # - median_distance_from_previous_px
+    # - std_distance_from_previous_px
+    # - max_distance_from_previous_px
+    # - min_distance_from_previous_px
+    # - mean_angle_from_previous_rad
+    # - median_angle_from_previous_rad
+    # - std_angle_from_previous_rad
+    # - max_angle_from_previous_rad
+    # - min_angle_from_previous_rad
+    # - mean_time_since_previous_s
+    # - median_time_since_previous_s
+    # - std_time_since_previous_s
+    # - max_time_since_previous_s
+    # - min_time_since_previous_s
+    # - mean_dispersion_px
+    # - std_dispersion_px
+    # - max_dispersion_px
+    # - min_dispersion_px
+    # - total_saccades
+    # - mean_saccade_duration_s
+    # - std_saccade_duration_s
+    # - max_saccade_duration_s
+    # - min_saccade_duration_s
+    # - mean_amplitude_px
+    # - std_amplitude_px
+    # - max_amplitude_px
+    # - min_amplitude_px
+    # - mean_amplitude_deg
+    # - std_amplitude_deg
+    # - max_amplitude_deg
+    # - min_amplitude_deg
+    # - mean_mean_velocity_px_s
+    # - std_mean_velocity_px_s
+    # - max_mean_velocity_px_s
+    # - min_mean_velocity_px_s
+    # - mean_peak_velocity_px_s
+    # - std_peak_velocity_px_s
+    # - max_peak_velocity_px_s
+    # - min_peak_velocity_px_s
+    # - mean_main_sequence_ratio
+    # - std_main_sequence_ratio
+    # - max_main_sequence_ratio
+    # - min_main_sequence_ratio
+    # - mean_q_ratio
+    # - std_q_ratio
+    # - max_q_ratio
+    # - min_q_ratio
+    # - total_blinks
+    # - mean_blink_duration_s
+    # - std_blink_duration_s
+    # - max_blink_duration_s
+    # - min_blink_duration_s
+    # - mean_pupil_diameter_left_mm
+    # - std_pupil_diameter_left_mm
+    # - max_pupil_diameter_left_mm
+    # - min_pupil_diameter_left_mm
+    # - mean_pupil_diameter_right_mm
+    # - std_pupil_diameter_right_mm
+    # - max_pupil_diameter_right_mm
+    # - min_pupil_diameter_right_mm
+    # - mean_eyelid_aperture_left_mm
+    # - std_eyelid_aperture_left_mm
+    # - max_eyelid_aperture_left_mm
+    # - min_eyelid_aperture_left_mm
+    # - mean_eyelid_aperture_right_mm
+    # - std_eyelid_aperture_right_mm
+    # - max_eyelid_aperture_right_mm
+    # - min_eyelid_aperture_right_mm
+    # - mean_distance_between_pupils_center_mm
+    # - std_distance_between_pupils_center_mm
+    # - max_distance_between_pupils_center_mm
+    # - min_distance_between_pupils_center_mm
+    # - phase_duration_s
+    # - keystrokes_needed
+    # - keystrokes_per_sec
   target: label
 model:
   hyperparameters:

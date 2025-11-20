@@ -15,8 +15,7 @@ import pandas as pd
 
 # Configure logger
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
 logger = logging.getLogger(__name__)
@@ -25,7 +24,9 @@ with open("config/params.yml") as f:
     config = yaml.safe_load(f)
 
 
-def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.csv") -> None:
+def segment_data_by_keystrokes(
+    data_dir: str, keystroke_file: str = "keystrokes.csv"
+) -> None:
     """
     Segment each CSV file in data_dir into chunks between keystroke events.
 
@@ -42,11 +43,11 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
         return
 
     ks = pd.read_csv(ks_path)
-    output_dir = data_dir + '/' + "Segmentation"
+    output_dir = data_dir + "/" + "Segmentation"
     os.makedirs(output_dir, exist_ok=True)
 
     logger.info(f"Segmenting data in {data_dir}, output -> {output_dir}")
-    csv_files = [d for d in config['data']['csv_files']]
+    csv_files = [d for d in config["data"]["csv_files"]]
     for filename in csv_files:
         file_path = os.path.join(data_dir, filename)
         if not os.path.exists(file_path):
@@ -64,33 +65,35 @@ def segment_data_by_keystrokes(data_dir: str, keystroke_file: str = "keystrokes.
         for i, row in ks.iterrows():
             current_t = row["timestamp [ns]"]
             if i >= 9:
-                key_name = str(i+1) + '_' + str(row["name"])
+                key_name = str(i + 1) + "_" + str(row["name"])
             else:
-                key_name = str(0) + str(i+1) + '_' + str(row["name"])
-            if '?' in key_name:
-                key_name = str(i+1) + '_' + 'qm_pressed'
+                key_name = str(0) + str(i + 1) + "_" + str(row["name"])
+            if "?" in key_name:
+                key_name = str(i + 1) + "_" + "qm_pressed"
             if i == 0:
                 segment = df[df[ts_col] < current_t]
             else:
                 segment = df[(df[ts_col] >= prev_t) & (df[ts_col] < current_t)]
 
-            save_dir = output_dir + '/' + key_name
+            save_dir = output_dir + "/" + key_name
             os.makedirs(save_dir, exist_ok=True)
-            out_path = save_dir + '/' + filename
+            out_path = save_dir + "/" + filename
             segment.to_csv(out_path, index=False)
             # logger.info(f"Saved {len(segment)} rows -> {out_path}")
 
             prev_t = current_t
-            
+
         segment = df[(df[ts_col] >= prev_t)]
-        save_dir = output_dir + '/' + str(i+2) + '_submit_pressed'
+        save_dir = output_dir + "/" + str(i + 2) + "_submit_pressed"
         os.makedirs(save_dir, exist_ok=True)
-        out_path = save_dir + '/' + filename
+        out_path = save_dir + "/" + filename
         segment.to_csv(out_path, index=False)
         # logger.info(f"Saved {len(segment)} rows -> {out_path}")
 
 
-def segment_data_by_phase(data_dir: str, keystroke_file: str = "keystrokes.csv") -> None:
+def segment_data_by_phase(
+    data_dir: str, keystroke_file: str = "keystrokes.csv"
+) -> None:
     """
     Segment sensor data into 3 parts:
     1. Username     : start  → correct 5 (after 202)
@@ -159,7 +162,7 @@ def segment_data_by_phase(data_dir: str, keystroke_file: str = "keystrokes.csv")
     dirs = {
         "user": os.path.join(seg_dir, "1_Username"),
         "pass": os.path.join(seg_dir, "2_Password"),
-        "veri": os.path.join(seg_dir, "3_Verification")
+        "veri": os.path.join(seg_dir, "3_Verification"),
     }
 
     for d in dirs.values():
@@ -168,7 +171,7 @@ def segment_data_by_phase(data_dir: str, keystroke_file: str = "keystrokes.csv")
     # --------------------------------------------------------
     # 4. Segment all CSV files according to timestamps
     # --------------------------------------------------------
-    csv_files = [d for d in config['data']['csv_files']]
+    csv_files = [d for d in config["data"]["csv_files"]]
 
     for filename in csv_files:
         file_path = os.path.join(data_dir, filename)
@@ -194,4 +197,4 @@ def segment_data_by_phase(data_dir: str, keystroke_file: str = "keystrokes.csv")
 
 
 if __name__ == "__main__":
-    segment_data_by_phase('data/legitimate/orestis_4-96f94c5f')
+    segment_data_by_phase("data/legitimate/orestis_4-96f94c5f")

@@ -10,8 +10,7 @@ from utils.plotting import plot_learning_curve, plot_conf_matrix, plot_probabili
 
 # Configure logger
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
 with open("config/params.yml") as f:
@@ -21,38 +20,37 @@ with open("config/params.yml") as f:
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    hyperparameters = config['model']['hyperparameters']
-    epochs = hyperparameters['max_epochs']
-    patience = hyperparameters['patience']
-    learning_rate = hyperparameters['learning_rate']
-    batch_size = hyperparameters['batch_size']
-    val_size = hyperparameters['validation_size']
-    test_size = hyperparameters['test_size']
+    hyperparameters = config["model"]["hyperparameters"]
+    epochs = hyperparameters["max_epochs"]
+    patience = hyperparameters["patience"]
+    learning_rate = hyperparameters["learning_rate"]
+    batch_size = hyperparameters["batch_size"]
+    val_size = hyperparameters["validation_size"]
+    test_size = hyperparameters["test_size"]
     train_size = 1 - test_size - val_size
-     
-    dataset = EyeTrackingDataset(root_dir='data/')
-        
+
+    dataset = EyeTrackingDataset(root_dir="data/")
+
     train_dataset, test_dataset = random_split(dataset, [0.85, 0.15])
     train_dataset, val_dataset = random_split(train_dataset, [0.8, 0.2])
 
-    
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  
+
     model = LSTMClassifier(
-        input_size=len(config['dataset']['columns']), 
-        hidden_size=config['model']['architecture']['hidden_size'],
-        num_layers=config['model']['architecture']['num_layers'],
-        dropout=config['model']['architecture']['dropout']
+        input_size=len(config["dataset"]["columns"]),
+        hidden_size=config["model"]["architecture"]["hidden_size"],
+        num_layers=config["model"]["architecture"]["num_layers"],
+        dropout=config["model"]["architecture"]["dropout"],
     ).to(device)
 
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    
-    best_val_loss = float('inf')
+
+    best_val_loss = float("inf")
     counter = 0
     train_losses, val_losses = [], []
 
@@ -61,10 +59,10 @@ if __name__ == "__main__":
         train_loss = 0.0
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
-            probs = model(X_batch)  
-            preds_trial = probs # .mean(dim=1)             
+            probs = model(X_batch)
+            preds_trial = probs  # .mean(dim=1)
             loss = criterion(preds_trial, y_batch)
-            
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -78,12 +76,14 @@ if __name__ == "__main__":
             for X_batch, y_batch in val_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 probs = model(X_batch)
-                preds_trial = probs # .mean(dim=1)
+                preds_trial = probs  # .mean(dim=1)
                 loss = criterion(preds_trial, y_batch)
                 val_loss += loss.item() * X_batch.size(0)
         val_loss /= len(val_loader.dataset)
         val_losses.append(val_loss)
-        print(f"Epoch {epoch+1}/{epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+        print(
+            f"Epoch {epoch+1}/{epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}"
+        )
 
         # ---- EARLY STOPPING ----
         if val_loss < best_val_loss:
@@ -93,7 +93,7 @@ if __name__ == "__main__":
             counter += 1
             if counter >= patience:
                 break
-            
+
     plot_learning_curve(train_losses, val_losses, len(val_losses))
     model.eval()
     all_preds, all_labels = [], []
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         for X_batch, y_batch in test_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             segment_probs = model(X_batch)
-            trial_probs = segment_probs # .mean(dim=1)
+            trial_probs = segment_probs  # .mean(dim=1)
             all_preds.extend(trial_probs.cpu().numpy())
             all_labels.extend(y_batch.cpu().numpy())
 
@@ -116,12 +116,13 @@ if __name__ == "__main__":
     logger.info(f"Accuracy: {acc:.4f}")
     logger.info(f"F1 Score: {f1:.4f}")
     logger.info(f"ROC AUC: {auc:.4f}")
-    
-    plot_conf_matrix(all_labels, pred_labels, save_path="results/plots/confusion_matrix.png")
 
+    plot_conf_matrix(
+        all_labels, pred_labels, save_path="results/plots/confusion_matrix.png"
+    )
 
     # for i in range(35):
-    
+
     #     sample_X, sample_y = test_dataset[i]
     #     sample_X = sample_X.unsqueeze(0).to(device)
 
