@@ -21,7 +21,7 @@ from preprocess.segmentation import segment_data_by_keystrokes, segment_data_by_
 from preprocess.features import (
     aggregate_segments,
     augment_eye_tracking_data,
-    aggregate_phases,
+    aggregate_recording,
 )
 
 # Configure logger
@@ -37,7 +37,7 @@ def run_pipeline(data_dir):
         if not filenames:
             continue
 
-        # logger.info(f"Proccessing {dirpath} ...")
+        logger.info(f"Proccessing {dirpath} ...")
 
         # logger.info("Dropping columns ...")
         # drop_columns(dirpath)
@@ -58,8 +58,8 @@ def run_pipeline(data_dir):
         # segment_data_by_phase(dirpath)
 
         logger.info("Aggregating features ...")
+        aggregate_recording(dirpath, "agg_session")
 
-        aggregate_phases(dirpath, "whole_recording")
         # username_dir = os.path.join(dirpath, 'Segmentation/1_Username')
         # aggregate_phases(username_dir, 'phase_1_username')
 
@@ -78,14 +78,10 @@ def run_pipeline(data_dir):
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(
-    #     description="Run full eye-tracking preprocessing pipeline"
-    # )
-    # parser.add_argument(
-    #     "--data_dir",
-    #     required=True,
-    #     help="Path to raw data folder"
-    # )
-    # args = parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description="Run full eye-tracking preprocessing pipeline"
+    )
+    parser.add_argument("--data_dir", required=True, help="Path to raw data folder")
+    args = parser.parse_args()
 
-    run_pipeline("data_whole")
+    run_pipeline(args.data_dir)

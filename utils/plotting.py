@@ -4,7 +4,81 @@ import matplotlib as mpl
 import pandas as pd
 import seaborn as sns
 import numpy as np
+from load_data import load_dataset
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.feature_selection import mutual_info_classif
+from sklearn.decomposition import PCA
+from sklearn.svm import LinearSVC
+from matplotlib.colors import ListedColormap
+
+
+def plot_roc_curve(fpr, tpr, roc):
+    plt.figure(figsize=(7, 6))
+    plt.plot(fpr, tpr, label=f"AUC = {roc:.4f}")
+    plt.plot([0, 1], [0, 1], linestyle="--")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title(f"ROC Curve")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def plot_far_frr_eer(fpr, tpr, thresholds, title="FAR / FRR / EER Curve"):
+    # FAR = FPR
+    far = fpr
+
+    # FRR = 1 - TPR
+    frr = 1 - tpr
+
+    # EER point
+    abs_diffs = np.abs(far - frr)
+    eer_idx = np.argmin(abs_diffs)
+    eer = far[eer_idx]
+    eer_threshold = thresholds[eer_idx]
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.plot(thresholds, far, label="FAR (False Acceptance Rate)")
+    plt.plot(thresholds, frr, label="FRR (False Rejection Rate)")
+    plt.axvline(
+        eer_threshold,
+        color="red",
+        linestyle="--",
+        label=f"EER Threshold = {eer_threshold:.4f}",
+    )
+    plt.axhline(eer, color="green", linestyle="--", label=f"EER = {eer*100:.2f}%")
+
+    # Point mark
+    plt.scatter([eer_threshold], [eer], color="red")
+
+    plt.xlabel("Threshold")
+    plt.ylabel("Error Rate")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    print(f"EER: {eer * 100:.2f}%")
+    print(f"EER Threshold: {eer_threshold:.4f}")
+
+
+def plot_features(X, y, col_x, col_y):
+    if col_x not in X.columns:
+        raise ValueError(f"{col_x} not found in X columns.")
+    if col_y not in X.columns:
+        raise ValueError(f"{col_y} not found in X columns.")
+
+    x_vals = X[col_x].values
+    y_vals = X[col_y].values
+    labels = y.values
+
+    plt.figure(figsize=(7, 5))
+    plt.scatter(x_vals, y_vals, c=labels)
+    plt.xlabel(col_x)
+    plt.ylabel(col_y)
+    plt.title(f"{col_x} vs {col_y}")
+    plt.show()
 
 
 def plot_metric(metric_values, metric_name, models):
@@ -42,14 +116,21 @@ def plot_learning_curve(
     plt.show()
 
 
-def plot_conf_matrix(y_true, y_pred, save_path="results/plots/confusion_matrix.png"):
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    cm = confusion_matrix(y_true, y_pred)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot(cmap="Blues", values_format="d")
+def plot_conf_matrix(
+    confusion_matrix, model, save_path="results/plots/confusion_matrix.png"
+):
+    # Transpose so predicted = Y-axis, actual = X-axis
+    cm_swapped = confusion_matrix.T
+
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=cm_swapped,
+        display_labels=model.classes_
+    )
+
+    disp.plot(cmap="Blues")
+    plt.xlabel("Actual")
+    plt.ylabel("Predicted")
     plt.title("Confusion Matrix")
-    plt.tight_layout()
-    # plt.savefig(save_path)
     plt.show()
 
 
@@ -572,24 +653,25 @@ def draw_keyboard_lines(ax, df, keys):
 
 
 if __name__ == "__main__":
-    # for dirpath, dirnames, filenames in os.walk('data'):
-    #     # Skip any folder named 'Segmentation'
-    #     if "Segmentation" in dirnames:
-    #         dirnames.remove("Segmentation")
+    pass
+#     # for dirpath, dirnames, filenames in os.walk('data'):
+#     #     # Skip any folder named 'Segmentation'
+#     #     if "Segmentation" in dirnames:
+#     #         dirnames.remove("Segmentation")
 
-    #     # Only continue if there are CSV files in this folder
-    #     csv_files = [f for f in filenames if f.endswith(".csv")]
-    #     if not csv_files:
-    #         continue
-    dirpath = "data/impostors/alex_1-855adef5"
-    print(f"Processing folder: {dirpath}")
-    # plot_gaze_over_time(dirpath)
-    # compare_filter_unfiltered_data(dirpath.replace('data', 'data_unfiltered'), dirpath)
-    plot_gaze_heatmap(dirpath)
-    # plot_gaze_scanpath(dirpath)
-    plot_fixation_spatial_map(dirpath)
-    # plot_fixation_duration_histogram(dirpath)
-    # plot_pupil_diameter_over_time(dirpath)
-    # plot_eyelid_aperture_over_time(dirpath)
-    # plot_eyelid_angles_over_time(dirpath)
-    # plot_distance_between_pupils_over_time(dirpath)
+#     #     # Only continue if there are CSV files in this folder
+#     #     csv_files = [f for f in filenames if f.endswith(".csv")]
+#     #     if not csv_files:
+#     #         continue
+#     dirpath = "data/impostors/alex_1-855adef5"
+#     print(f"Processing folder: {dirpath}")
+#     # plot_gaze_over_time(dirpath)
+#     # compare_filter_unfiltered_data(dirpath.replace('data', 'data_unfiltered'), dirpath)
+#     plot_gaze_heatmap(dirpath)
+#     # plot_gaze_scanpath(dirpath)
+#     plot_fixation_spatial_map(dirpath)
+#     # plot_fixation_duration_histogram(dirpath)
+#     # plot_pupil_diameter_over_time(dirpath)
+#     # plot_eyelid_aperture_over_time(dirpath)
+#     # plot_eyelid_angles_over_time(dirpath)
+#     # plot_distance_between_pupils_over_time(dirpath)

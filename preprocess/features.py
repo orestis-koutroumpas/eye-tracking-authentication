@@ -58,10 +58,8 @@ def augment_eye_tracking_data(data_dir: str) -> None:
     ).fillna(0)
 
     # Angle from previous fixation
-    fixations["angle from previous [rad]"] = np.radians(
-        np.arctan2(
-            fixations["fixation y [px]"].diff(), fixations["fixation x [px]"].diff()
-        )
+    fixations["angle from previous [rad]"] = np.arctan2(
+        fixations["fixation y [px]"].diff(), fixations["fixation x [px]"].diff()
     ).fillna(0)
 
     # Time since previous fixation
@@ -124,7 +122,7 @@ def augment_eye_tracking_data(data_dir: str) -> None:
     eye_states.to_csv(os.path.join(data_dir, "3d_eye_states.csv"), index=False)
 
 
-def aggregate_phases(data_dir: str, phase: str) -> None:
+def aggregate_recording(data_dir: str, name: str) -> None:
     fixations = pd.read_csv(os.path.join(data_dir, "fixations.csv"))
     saccades = pd.read_csv(os.path.join(data_dir, "saccades.csv"))
     eye_states = pd.read_csv(os.path.join(data_dir, "3d_eye_states.csv"))
@@ -222,10 +220,10 @@ def aggregate_phases(data_dir: str, phase: str) -> None:
     features["max_peak_velocity_px_s"] = saccades["peak velocity [px/s]"].max()
     features["min_peak_velocity_px_s"] = saccades["peak velocity [px/s]"].min()
 
-    features["median_main_sequence_ratio"] = saccades["main sequence ratio"].median()
-    features["std_main_sequence_ratio"] = saccades["main sequence ratio"].std()
-    features["max_main_sequence_ratio"] = saccades["main sequence ratio"].max()
-    features["min_main_sequence_ratio"] = saccades["main sequence ratio"].min()
+    features["median_sequence_ratio"] = saccades["main sequence ratio"].median()
+    features["std_sequence_ratio"] = saccades["main sequence ratio"].std()
+    features["max_sequence_ratio"] = saccades["main sequence ratio"].max()
+    features["min_sequence_ratio"] = saccades["main sequence ratio"].min()
 
     features["median_q_ratio"] = saccades["Q ratio"].median()
     features["std_q_ratio"] = saccades["Q ratio"].std()
@@ -311,7 +309,6 @@ def aggregate_phases(data_dir: str, phase: str) -> None:
     ) / 1e9
 
     ### Keystrokes ###
-    # if phase != "phase_3_verification":
     features["keystrokes_needed"] = len(keystrokes)
 
     features["keystrokes_per_sec"] = (
@@ -321,30 +318,17 @@ def aggregate_phases(data_dir: str, phase: str) -> None:
     )
 
     df = pd.DataFrame([features]).fillna(0)
+
     df["label"] = (
-        1
-        if os.path.basename(os.path.dirname(Path(data_dir).parent)) == "legitimate"
-        else 0
-    )
-    df["dataset"] = (
-        "train"
-        if "train" in os.path.basename(os.path.dirname(Path(data_dir)))
-        else "test"
+        0
+        if os.path.basename(os.path.dirname(Path(data_dir).parent)) == "impostors"
+        else 1
     )
 
-    filename = phase + ".csv"
+    filename = name + ".csv"
     out_path = os.path.join(data_dir, filename)
     df.to_csv(out_path, index=False)
-    logger.info(f"Saved {phase} aggregated features -> {out_path}")
-
-    # df = pd.DataFrame([features]).fillna(0)
-    # df["label"] = 1 if os.path.basename(os.path.dirname(Path(data_dir).parent.parent.parent)) == 'legitimate' else 0
-    # df["dataset"] = "train" if "train" in os.path.basename(os.path.dirname(Path(data_dir).parent.parent)) else "test"
-
-    # filename = phase + '.csv'
-    # out_path = os.path.join(os.path.dirname(Path(data_dir).parent), filename)
-    # df.to_csv(out_path, index=False)
-    # logger.info(f"Saved {phase} aggregated features -> {out_path}")
+    logger.info(f"Saved {name} aggregated features -> {out_path}")
 
 
 def summarize_csv(file_path: str, file_name: str) -> pd.DataFrame:

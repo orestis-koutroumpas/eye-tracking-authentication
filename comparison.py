@@ -1,18 +1,12 @@
+"""
+Not used
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    roc_auc_score,
-    confusion_matrix,
-    classification_report,
-    roc_curve,
-    mean_squared_error,
-)
+
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
@@ -39,49 +33,16 @@ from sklearn.feature_selection import SelectKBest, f_classif, RFECV
 import xgboost as xgb
 
 
-from load_data import load_all_phases
+from load_data import load_dataset
 from utils.plotting import plot_metric
-
-
-def evaluate_model(name, model, X_test, y_test):
-    print(f"\n==================== {name.upper()} MODEL ====================")
-
-    y_pred_proba = model.predict_proba(X_test)[:, 1]
-    y_pred = (y_pred_proba > 0.5).astype(int)
-
-    acc = accuracy_score(y_test, y_pred)
-    prec = precision_score(y_test, y_pred)
-    rec = recall_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
-    cf = confusion_matrix(y_test, y_pred)
-    roc = roc_auc_score(y_test, y_pred_proba)
-    tn, fp, fn, tp = cf.ravel()
-    far = fp / (fp + tn)
-    frr = fn / (fn + tp)
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
-    fnr = 1 - tpr
-    eer_threshold = thresholds[np.nanargmin(np.absolute(fnr - fpr))]
-    eer = fpr[np.nanargmin(np.absolute(fnr - fpr))]
-
-    print(f"Accuracy:   {acc:.4f}")
-    print(f"Precision:  {prec:.4f}")
-    print(f"Recall:     {rec:.4f}")
-    print(f"F1-score:   {f1:.4f}")
-    print(f"ROC-AUC:    {roc:.4f}")
-    print(f"FAR: {100*far:.4f} %")
-    print(f"FRR: {100*frr:.4f} %")
-    print(f"EER: {100*eer:.4f} % at threshold {eer_threshold:.4f}")
-    print("Confusion Matrix:")
-    print(cf)
-
-    return acc, prec, rec, f1, far, frr, eer
+from utils.metrics import evaluate_model
 
 
 if __name__ == "__main__":
 
-    datasets = load_all_phases("data_whole")
-    X_train, y_train = datasets["X_train_whole"], datasets["y_train_whole"]
-    X_test, y_test = datasets["X_test_whole"], datasets["y_test_whole"]
+    X_train, y_train, X_test, y_test = load_dataset(
+        "data", phase_filename="whole_recording.csv"
+    )
 
     total_samples = len(X_train) + len(X_test)
     train_pct = (len(X_train) / total_samples) * 100
