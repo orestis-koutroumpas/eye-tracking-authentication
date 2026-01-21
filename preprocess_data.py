@@ -6,23 +6,13 @@ Usage:
 """
 
 import argparse
-import os
 import logging
-from pathlib import Path
-import pandas as pd
+import os
 
-from preprocess.filters import (
-    drop_columns,
-    adjust_timestamps,
-    synchronize_timestamps,
-    drop_rows,
-)
-from preprocess.segmentation import segment_data_by_keystrokes, segment_data_by_phase
-from preprocess.features import (
-    aggregate_segments,
-    augment_eye_tracking_data,
-    aggregate_recording,
-)
+
+from preprocess.features import (aggregate_recording, augment_eye_tracking_data)
+from preprocess.filters import (adjust_timestamps, drop_columns, drop_rows,
+                                synchronize_timestamps)
 
 # Configure logger
 logging.basicConfig(
@@ -39,40 +29,23 @@ def run_pipeline(data_dir):
 
         logger.info(f"Proccessing {dirpath} ...")
 
-        # logger.info("Dropping columns ...")
-        # drop_columns(dirpath)
+        logger.info("Dropping columns ...")
+        drop_columns(dirpath)
 
-        # logger.info("Dropping rows ...")
-        # drop_rows(dirpath)
+        logger.info("Dropping rows ...")
+        drop_rows(dirpath)
 
-        # logger.info("Adjusting timestamps ...")
-        # adjust_timestamps(dirpath)
+        logger.info("Adjusting timestamps ...")
+        adjust_timestamps(dirpath)
 
-        # logger.info("Synchronizing timestamps ...")
-        # synchronize_timestamps(dirpath)
+        logger.info("Synchronizing timestamps ...")
+        synchronize_timestamps(dirpath)
 
-        # logger.info("Augmenting data ...")
-        # augment_eye_tracking_data(dirpath)
-
-        # logger.info("Segmenting data ...")
-        # segment_data_by_phase(dirpath)
+        logger.info("Augmenting data ...")
+        augment_eye_tracking_data(dirpath)
 
         logger.info("Aggregating features ...")
         aggregate_recording(dirpath, "agg_session")
-
-        # username_dir = os.path.join(dirpath, 'Segmentation/1_Username')
-        # aggregate_phases(username_dir, 'phase_1_username')
-
-        # password_dir = os.path.join(dirpath, 'Segmentation/2_Password')
-        # aggregate_phases(password_dir, 'phase_2_password')
-
-        # verification_dir = os.path.join(dirpath, 'Segmentation/3_Verification')
-        # aggregate_phases(verification_dir, 'phase_3_verification')
-        # breakpoint()
-        # parent = Path(dirpath).parent
-        # label = 1 if parent.name == "legitimate" else 0
-        # segmented_dir = os.path.join(dirpath, 'Segmentation')
-        # aggregate_segments(segmented_dir, label)
 
     logger.info("Pipeline finished successfully!")
 

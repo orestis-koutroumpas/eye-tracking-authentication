@@ -10,12 +10,13 @@ for the given recording.
 
 """
 
-import os
-import yaml
 import logging
-import pandas as pd
-import numpy as np
+import os
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import yaml
 from sklearn.cluster import KMeans
 
 # Configure logger
@@ -220,15 +221,15 @@ def aggregate_recording(data_dir: str, name: str) -> None:
     features["max_peak_velocity_px_s"] = saccades["peak velocity [px/s]"].max()
     features["min_peak_velocity_px_s"] = saccades["peak velocity [px/s]"].min()
 
-    features["median_sequence_ratio"] = saccades["main sequence ratio"].median()
-    features["std_sequence_ratio"] = saccades["main sequence ratio"].std()
-    features["max_sequence_ratio"] = saccades["main sequence ratio"].max()
-    features["min_sequence_ratio"] = saccades["main sequence ratio"].min()
+    features["median_main_sequence_ratio"] = saccades["main sequence ratio"].median()
+    features["std_main_sequence_ratio"] = saccades["main sequence ratio"].std()
+    features["max_main_sequence_ratio"] = saccades["main sequence ratio"].max()
+    features["min_main_sequence_ratio"] = saccades["main sequence ratio"].min()
 
-    features["median_q_ratio"] = saccades["Q ratio"].median()
-    features["std_q_ratio"] = saccades["Q ratio"].std()
-    features["max_q_ratio"] = saccades["Q ratio"].max()
-    features["min_q_ratio"] = saccades["Q ratio"].min()
+    features["median_Q_ratio"] = saccades["Q ratio"].median()
+    features["std_Q_ratio"] = saccades["Q ratio"].std()
+    features["max_Q_ratio"] = saccades["Q ratio"].max()
+    features["min_Q_ratio"] = saccades["Q ratio"].min()
 
     ### Blinks ###
     features["total_blinks"] = len(blinks)
@@ -263,6 +264,58 @@ def aggregate_recording(data_dir: str, name: str) -> None:
     ].max()
     features["min_pupil_diameter_right_mm"] = eye_states[
         "pupil diameter right [mm]"
+    ].min()
+
+    features["median_eyelid_angle_top_left"] = eye_states[
+        "eyelid angle top left [rad]"
+    ].median()
+    features["std_eyelid_angle_top_left"] = eye_states[
+        "eyelid angle top left [rad]"
+    ].std()
+    features["max_eyelid_angle_top_left"] = eye_states[
+        "eyelid angle top left [rad]"
+    ].max()
+    features["min_eyelid_angle_top_left"] = eye_states[
+        "eyelid angle top left [rad]"
+    ].min()
+
+    features["median_eyelid_angle_bottom_left"] = eye_states[
+        "eyelid angle bottom left [rad]"
+    ].median()
+    features["std_eyelid_angle_bottom_left"] = eye_states[
+        "eyelid angle bottom left [rad]"
+    ].std()
+    features["max_eyelid_angle_bottom_left"] = eye_states[
+        "eyelid angle bottom left [rad]"
+    ].max()
+    features["min_eyelid_angle_bottom_left"] = eye_states[
+        "eyelid angle bottom left [rad]"
+    ].min()
+
+    features["median_eyelid_angle_top_right"] = eye_states[
+        "eyelid angle top right [rad]"
+    ].median()
+    features["std_eyelid_angle_top_right"] = eye_states[
+        "eyelid angle top right [rad]"
+    ].std()
+    features["max_eyelid_angle_top_right"] = eye_states[
+        "eyelid angle top right [rad]"
+    ].max()
+    features["min_eyelid_angle_top_right"] = eye_states[
+        "eyelid angle top right [rad]"
+    ].min()
+
+    features["median_eyelid_angle_bottom_right"] = eye_states[
+        "eyelid angle bottom right [rad]"
+    ].median()
+    features["std_eyelid_angle_bottom_right"] = eye_states[
+        "eyelid angle bottom right [rad]"
+    ].std()
+    features["max_eyelid_angle_bottom_right"] = eye_states[
+        "eyelid angle bottom right [rad]"
+    ].max()
+    features["min_eyelid_angle_bottom_right"] = eye_states[
+        "eyelid angle bottom right [rad]"
     ].min()
 
     features["median_eyelid_aperture_left_mm"] = eye_states[
@@ -304,18 +357,9 @@ def aggregate_recording(data_dir: str, name: str) -> None:
         "distance between pupils center [mm]"
     ].min()
 
-    features["phase_duration_s"] = (
+    features["session_duration_s"] = (
         eye_states["timestamp [ns]"].max() - eye_states["timestamp [ns]"].min()
     ) / 1e9
-
-    ### Keystrokes ###
-    features["keystrokes_needed"] = len(keystrokes)
-
-    features["keystrokes_per_sec"] = (
-        features["keystrokes_needed"] / features["phase_duration_s"]
-        if features["phase_duration_s"] > 0
-        else 0
-    )
 
     df = pd.DataFrame([features]).fillna(0)
 

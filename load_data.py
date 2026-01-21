@@ -1,9 +1,9 @@
-import os
 import logging
+import os
 from pathlib import Path
+
 import pandas as pd
 import yaml
-import random
 from sklearn.utils import shuffle
 
 # Configure logger
@@ -50,13 +50,13 @@ def load_dataset(data_folder="data", leg_train_pct=0.7, imp_train_pct=0.7):
         train_pct (float): Percentage of data to put in training split.
 
     Returns:
-        X_train, y_train, X_test, y_test (all pandas DataFrames or Series)
+        X_train, y_train, X_test, y_test
     """
     columns = config["dataset"]["columns"].copy()
     target_col = config["dataset"]["target"]
 
     # -------------------------
-    # 1. Load LEGITIMATE user
+    # 1. Load GENUINE user
     # -------------------------
     legit_root = os.path.join(data_folder, "legitimate", "orestis")
 
@@ -71,10 +71,6 @@ def load_dataset(data_folder="data", leg_train_pct=0.7, imp_train_pct=0.7):
     n_legit_train = int(leg_train_pct * n_legit)
     print(f"Legitimate Sessions in Training: {n_legit_train}")
     print(f"Legitimate Sessions in Testing: {119-n_legit_train}")
-
-    # Random Split
-    # legit_train_sessions = random.sample(legit_sessions, n_legit_train)
-    # legit_test_sessions = [s for s in legit_sessions if s not in legit_train_sessions]
 
     # First N split
     legit_train_sessions = legit_sessions[:n_legit_train]
@@ -108,10 +104,6 @@ def load_dataset(data_folder="data", leg_train_pct=0.7, imp_train_pct=0.7):
     n_users = len(impostor_users)
     n_users_train = int(imp_train_pct * n_users)
 
-    # Random Split
-    # train_users = random.sample(impostor_users, n_users_train)
-    # test_users = [u for u in impostor_users if u not in train_users]
-
     # First N split
     train_users = impostor_users[:n_users_train]
     test_users = impostor_users[n_users_train:]
@@ -137,24 +129,18 @@ def load_dataset(data_folder="data", leg_train_pct=0.7, imp_train_pct=0.7):
             X_test_list.append(df)
             y_test_list.append(df[target_col])
 
-    # -------------------------
     # CONCAT FINAL DATASETS
-    # -------------------------
     X_train = pd.concat(X_train_list, ignore_index=True)
     X_test = pd.concat(X_test_list, ignore_index=True)
 
     y_train = pd.concat(y_train_list, ignore_index=True)
     y_test = pd.concat(y_test_list, ignore_index=True)
 
-    # -------------------------
     # DROP UNWANTED COLUMNS
-    # -------------------------
     X_train = X_train[columns]
     X_test = X_test[columns]
 
-    # -------------------------
     # SHUFFLE TRAINING DATA
-    # -------------------------
     X_train, y_train = shuffle(X_train, y_train, random_state=42)
 
     return X_train, y_train, X_test, y_test

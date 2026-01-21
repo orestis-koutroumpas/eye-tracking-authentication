@@ -8,10 +8,11 @@ the keystroke name in the filename.
 
 """
 
-import os
-import yaml
 import logging
+import os
+
 import pandas as pd
+import yaml
 
 # Configure logger
 logging.basicConfig(

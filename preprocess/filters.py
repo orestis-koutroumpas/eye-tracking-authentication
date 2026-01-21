@@ -9,8 +9,9 @@ Adjust timestamps using events.start time
 
 """
 
-import os
 import logging
+import os
+
 import pandas as pd
 import yaml
 

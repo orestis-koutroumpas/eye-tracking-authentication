@@ -5,10 +5,11 @@ Usage:
     python -m preprocess.clear_keystrokes --data_dir data
 """
 
-import os
-import logging
-import pandas as pd
 import argparse
+import logging
+import os
+
+import pandas as pd
 
 # Configure logger
 logging.basicConfig(

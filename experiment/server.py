@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify
 import csv
 import os
 import time
+
+from flask import Flask, jsonify, request
 from pupil_labs.realtime_api.simple import discover_one_device
 
 app = Flask(__name__)
