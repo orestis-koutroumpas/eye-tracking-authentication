@@ -12,7 +12,6 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.preprocessing import StandardScaler
 
 
-
 def plot_model_comparison(models, FAR, FRR, EER):
     x = np.arange(len(models))
     width = 0.25
@@ -903,3 +902,38 @@ def plot_distance_between_pupils_over_time(
     plt.savefig(save_path, bbox_inches="tight")
     plt.show()
     plt.close()
+
+
+def plot_eer_tradeoff():# Generate threshold values
+    thresholds = np.linspace(0, 1, 100)
+
+    # Simulated FAR and FRR curves
+    far = np.exp(-5 * thresholds)
+    frr = np.exp(-5 * (1 - thresholds))
+
+    # Compute EER point (for dashed line only)
+    eer_index = np.argmin(np.abs(far - frr))
+    eer_threshold = thresholds[eer_index]
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.plot(thresholds, far, linewidth=2)
+    plt.plot(thresholds, frr, linewidth=2)
+
+    # Dashed vertical line at EER threshold
+    plt.axhline(y=0.0825, linestyle='--', linewidth=2, color='black')
+
+    # Place labels near curves with larger font
+    plt.text(0.08, far[5], "False Acceptance Rate", fontsize=14, verticalalignment='center')
+    plt.text(0.575, frr[94], "False Rejection Rate", fontsize=14, verticalalignment='center')
+    plt.text(0.05, 0.15, "Equal Error Rate", fontsize=14, verticalalignment='center')
+
+    # Axis labels with larger font
+    plt.xlabel("Decision Threshold", fontsize=14)
+    plt.ylabel("Error Rate", fontsize=14)
+
+    # Tick label size
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+
+    plt.show()
