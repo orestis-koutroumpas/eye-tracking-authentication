@@ -224,14 +224,14 @@ if __name__ == "__main__":
 
     # Compare Models
     models = [
-        "Linear SVM",
         "Logistic Regression",
+        "Linear SVM",
         "SVM (RBF)",
         "Random Forest"
     ]
 
-    FAR = [linear_svm_far, log_far, svm_far, rf_far]
-    FRR = [linear_svm_frr, log_frr, svm_frr, rf_frr]
-    EER = [linear_svm_eer, log_eer, svm_eer, rf_eer]
+    FAR = [log_far, linear_svm_far, svm_far, rf_far]
+    FRR = [log_frr, linear_svm_frr, svm_frr, rf_frr]
+    EER = [log_eer, linear_svm_eer, svm_eer, rf_eer]
 
     plot_model_comparison(models, FAR, FRR, EER)
