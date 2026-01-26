@@ -27,14 +27,14 @@ if __name__ == "__main__":
     ### Load Data ###
     
     # Approach I
-    # X_train, y_train, X_test, y_test = load_dataset(
-    #     "data", leg_train_pct=0.7, imp_train_pct=0.7
-    # )
+    X_train, y_train, X_test, y_test = load_dataset(
+        "data", leg_train_pct=0.7, imp_train_pct=0.7
+    )
 
     # Approach II
-    X_train, y_train, X_test, y_test = load_dataset(
-        "data", leg_train_pct=0.125, imp_train_pct=0.125
-    )
+    # X_train, y_train, X_test, y_test = load_dataset(
+    #     "data", leg_train_pct=0.125, imp_train_pct=0.125
+    # )
 
     feature_names = np.array([f"F{i}" for i in range(X_train.shape[1])])
 
@@ -91,34 +91,6 @@ if __name__ == "__main__":
 
     ### Linear Models ###
 
-    # Linear SVM
-    linear_svm_clf = Pipeline(
-        [
-            ("scaler", StandardScaler()),
-            ("clf", SVC(kernel="linear", probability=True, random_state=42)),
-        ]
-    )
-    param_grid = {
-        'clf__C': [0.001, 0.01, 0.1, 1, 10, 100],
-    }
-
-    linear_svm_clf = GridSearchCV(
-        estimator=linear_svm_clf,
-        param_grid=param_grid,
-        scoring=eer_score,
-        cv=cv,
-        n_jobs=-1,
-    )
-
-    linear_svm_clf.fit(X_train, y_train)
-    print("Best Linaer SVM params:", linear_svm_clf.best_params_)
-
-    linear_svm_far, linear_svm_frr, linear_svm_eer, fpr, tpr, roc, thresholds, cf = evaluate_model(
-        "Linear SVM", linear_svm_clf, X_test, y_test
-    )
-    plot_far_frr_eer(fpr, tpr, thresholds, "FAR / FRR / EER Curve for Linear SVM")
-    plot_conf_matrix(cf, linear_svm_clf, "Confusion Matrix for Linear SVM")
-
     # Logistic Regressor
     log_clf = Pipeline(
         [
@@ -148,6 +120,36 @@ if __name__ == "__main__":
         fpr, tpr, thresholds, "FAR / FRR / EER Curve for Logistic Regressor"
     )
     plot_conf_matrix(cf, log_clf, "Confusion Matrix for Logistic Regressor")
+    
+    # Linear SVM
+    linear_svm_clf = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("clf", SVC(kernel="linear", probability=True, random_state=42)),
+        ]
+    )
+    param_grid = {
+        'clf__C': [0.001, 0.01, 0.1, 1, 10, 100],
+    }
+
+    linear_svm_clf = GridSearchCV(
+        estimator=linear_svm_clf,
+        param_grid=param_grid,
+        scoring=eer_score,
+        cv=cv,
+        n_jobs=-1,
+    )
+
+    linear_svm_clf.fit(X_train, y_train)
+    print("Best Linaer SVM params:", linear_svm_clf.best_params_)
+
+    linear_svm_far, linear_svm_frr, linear_svm_eer, fpr, tpr, roc, thresholds, cf = evaluate_model(
+        "Linear SVM", linear_svm_clf, X_test, y_test
+    )
+    plot_far_frr_eer(fpr, tpr, thresholds, "FAR / FRR / EER Curve for Linear SVM")
+    plot_conf_matrix(cf, linear_svm_clf, "Confusion Matrix for Linear SVM")
+
+    
 
     ### Non-Linear Models ###
 

@@ -382,10 +382,9 @@ def plot_conf_matrix(
     )
 
     disp.plot(cmap="Blues")
-    plt.xlabel("Actual")
-    plt.ylabel("Predicted")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
     plt.title(title)
-    plt.savefig(f"{save_path}", dpi=300, bbox_inches="tight")
     plt.show()
 
 
