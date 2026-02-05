@@ -5,7 +5,6 @@ Usage:
     python -m preprocess.clear_keystrokes --data_dir data
 """
 
-import argparse
 import logging
 import os
 

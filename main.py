@@ -1,26 +1,18 @@
-from itertools import combinations
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from matplotlib.lines import Line2D
-from mpl_toolkits.mplot3d import Axes3D
-from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import RFECV
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC, LinearSVC
 
 from load_data import load_dataset
 from utils.metrics import calculate_eer, evaluate_model
-from utils.plotting import (plot_conf_matrix, plot_det_curve, plot_far_frr_eer,
-                            plot_features, plot_model_comparison, plot_pca_2d,
-                            plot_pca_3d)
+from utils.plotting import (plot_conf_matrix, plot_far_frr_eer,
+                            plot_model_comparison)
 
 if __name__ == "__main__":
 
