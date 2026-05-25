@@ -1,0 +1,3 @@
+recording id,timestamp [ns],name,type
+d55280a4-bcdd-4f7b-871c-deaf24ca009d,1761218477864000000,recording.begin,recording
+d55280a4-bcdd-4f7b-871c-deaf24ca009d,1761218499321000000,recording.end,recording
