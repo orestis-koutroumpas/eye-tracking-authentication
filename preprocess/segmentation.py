@@ -6,13 +6,20 @@ the eye-tracking CSV files that fall between the previous and current
 keystroke timestamps. Each segment is saved into a new file with
 the keystroke name in the filename.
 
+Usage:
+    # Run directly (segments the recording hard-coded in __main__):
+    python -m preprocess.segmentation
+
+    # Or import the helpers:
+    from preprocess.segmentation import (segment_data_by_keystrokes,
+                                        segment_data_by_phase)
+    segment_data_by_keystrokes(recording_dir)
 """
 
 import logging
 import os
 
 import pandas as pd
-import yaml
 
 # Configure logger
 logging.basicConfig(
@@ -21,8 +28,15 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-with open("config/params.yml") as f:
-    config = yaml.safe_load(f)
+# Eye-tracking CSV files produced for each recording
+CSV_FILES = [
+    "gaze.csv",
+    "fixations.csv",
+    "saccades.csv",
+    "blinks.csv",
+    "3d_eye_states.csv",
+    "keystrokes.csv",
+]
 
 
 def segment_data_by_keystrokes(
@@ -48,8 +62,7 @@ def segment_data_by_keystrokes(
     os.makedirs(output_dir, exist_ok=True)
 
     logger.info(f"Segmenting data in {data_dir}, output -> {output_dir}")
-    csv_files = [d for d in config["data"]["csv_files"]]
-    for filename in csv_files:
+    for filename in CSV_FILES:
         file_path = os.path.join(data_dir, filename)
         if not os.path.exists(file_path):
             logger.warning(f"File not found: {file_path}, skipping.")
@@ -172,9 +185,7 @@ def segment_data_by_phase(
     # --------------------------------------------------------
     # 4. Segment all CSV files according to timestamps
     # --------------------------------------------------------
-    csv_files = [d for d in config["data"]["csv_files"]]
-
-    for filename in csv_files:
+    for filename in CSV_FILES:
         file_path = os.path.join(data_dir, filename)
         df = pd.read_csv(file_path)
 

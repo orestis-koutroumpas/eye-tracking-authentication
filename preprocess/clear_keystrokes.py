@@ -1,8 +1,17 @@
 """
-Clear keystrokees.csv
+Clean keystrokes.csv files across a data tree.
+
+  - clean_keystrokes(root_dir): drop unwanted key events (Tab, Shift, CapsLock, Enter)
+  - remove_Shift(root_dir): keep only the first of consecutive Shift_pressed rows
+    and strip the '_pressed' suffix from the 'name' column
 
 Usage:
-    python -m preprocess.clear_keystrokes --data_dir data
+    # Run directly (runs remove_Shift on the "data" folder, per __main__):
+    python -m preprocess.clear_keystrokes
+
+    # Or import the helpers:
+    from preprocess.clear_keystrokes import clean_keystrokes, remove_Shift
+    remove_Shift("data")
 """
 
 import logging

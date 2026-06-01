@@ -1,4 +1,24 @@
+"""
+Plotting helpers for model evaluation, per-recording exploration and dataset EDA.
+
+Importable helpers (not run directly). Every function writes its figure under
+the ``results/plots/`` tree and logs the saved path:
+    from utils import plotting
+
+    # model evaluation (saved under results/plots/models/)
+    plotting.plot_far_frr_eer(fpr, tpr, thresholds, "Random Forest")
+    plotting.plot_conf_matrix(cf, model, "Random Forest")
+
+    # per-recording exploration (saved under results/plots/recordings/<name>/)
+    plotting.plot_regions("data/genuine/genuine_1-...")
+
+    # dataset EDA (saved under results/plots/eda/)
+    plotting.plot_class_balance(df)
+"""
+
+import logging
 import os
+import re
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -11,162 +31,363 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.preprocessing import StandardScaler
 
+# Configure logger
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
-def plot_model_comparison(models, FAR, FRR, EER):
+# All figures are written under this directory (git-ignored via results/*).
+RESULTS_DIR = "results/plots"
+
+# Repo-wide convention: label 0 (impostor) -> blue, 1 (genuine) -> orange
+_CLASS_STYLE = {0: ("impostor", "blue"), 1: ("genuine", "orange")}
+
+# Human-readable axis/title labels for metric keys used across plots.
+_METRIC_LABELS = {"FAR_at_FRR1": "FAR @ FRR = 1%"}
+
+
+def _slug(text):
+    """Filesystem-safe slug from a free-text title."""
+    return re.sub(r"[^a-z0-9]+", "_", str(text).lower()).strip("_") or "figure"
+
+
+def results_path(*parts):
+    """Build a path under the results directory."""
+    return os.path.join(RESULTS_DIR, *parts)
+
+
+def _recording_path(data_path, filename):
+    """Path under results for a per-recording figure, keyed by recording name."""
+    recording = os.path.basename(os.path.normpath(data_path))
+    return results_path("recordings", recording, filename)
+
+
+def _save(save_path, fig=None, dpi=150):
+    """Save the current (or given) figure under results and log the path."""
+    save_path = save_path.replace("\\", "/")  # consistent forward slashes in logs
+    os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+    target = fig if fig is not None else plt
+    target.tight_layout()
+    target.savefig(save_path, dpi=dpi, bbox_inches="tight")
+    plt.close(fig) if fig is not None else plt.close()
+    logger.info(f"Saved figure -> {save_path}")
+    return save_path
+
+
+def _class_legend():
+    """Legend handles for the impostor/genuine color convention."""
+    return [
+        Line2D(
+            [0], [0], marker="o", color="w", label=name, markerfacecolor=color,
+            markersize=8,
+        )
+        for _, (name, color) in sorted(_CLASS_STYLE.items())
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Model evaluation plots
+# ---------------------------------------------------------------------------
+
+
+def plot_model_comparison(
+    models, FAR, FRR, EER, FAR_err=None, FRR_err=None, EER_err=None, save_path=None
+):
+    """Per-model FAR / FRR / EER as central markers with error bars.
+
+    Each ``*_err`` may be a 1-D array (symmetric, e.g. std) or a 2xN array
+    ``[lower_lengths, upper_lengths]`` (asymmetric, e.g. IQR around the median).
+    """
+    save_path = save_path or results_path("models", "model_comparison.png")
     x = np.arange(len(models))
-    width = 0.25
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    def err(e):
+        return None if e is None else np.nan_to_num(np.asarray(e, dtype=float))
 
-    # Bars
-    bars_far = ax.bar(x - width, FAR, width, label="FAR", alpha=0.9)
-    bars_frr = ax.bar(x, FRR, width, label="FRR", alpha=0.9)
-    bars_eer = ax.bar(x + width, EER, width, label="EER", alpha=0.9)
+    def upper(e):
+        if e is None:
+            return np.zeros(len(models))
+        e = np.asarray(e, dtype=float)
+        return e[1] if e.ndim == 2 else e
 
-    # -----------------------------
-    # Labels and styling
-    # -----------------------------
+    # (label, values, errors, x-offset, marker, color)
+    series = [
+        ("FAR", np.asarray(FAR), err(FAR_err), -0.18, "o", "#4C72B0"),
+        ("FRR", np.asarray(FRR), err(FRR_err), 0.00, "s", "#DD8452"),
+        ("EER", np.asarray(EER), err(EER_err), 0.18, "D", "#55A868"),
+    ]
+
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+
+    for label, vals, errs, off, marker, color in series:
+        ax.errorbar(
+            x + off, vals, yerr=errs,
+            fmt=marker, color=color, label=label, markersize=9,
+            linestyle="none", capsize=5, elinewidth=1.5, capthick=1.5,
+        )
+        for xi, v, up in zip(x + off, vals, upper(errs)):
+            ax.annotate(
+                f"{v:.2f}", (xi, v + up), textcoords="offset points",
+                xytext=(0, 7), ha="center", fontsize=8, color=color,
+            )
+
+    # Light vertical separators between models for readability.
+    for xi in x[:-1]:
+        ax.axvline(xi + 0.5, color="grey", lw=0.5, alpha=0.3)
+
     ax.set_xlabel("Machine Learning Models", fontsize=12)
     ax.set_ylabel("Error Rate (%)", fontsize=12)
     ax.set_xticks(x)
     ax.set_xticklabels(models)
-    ax.legend()
+    ax.set_xlim(-0.5, len(models) - 0.5)
+    ax.set_ylim(0, 10)
+    ax.grid(axis="y", alpha=0.3)
+    ax.legend(title="Metric", loc="upper right")
+    ax.set_title("Model comparison (median, IQR over seeds)")
 
-    # Remove grid
-    ax.grid(False)
-
-    # Add headroom on y-axis
-    max_value = max(FAR + FRR + EER)
-    ax.set_ylim(0, max_value * 1.25)
-
-    # -----------------------------
-    # Annotate bar values
-    # -----------------------------
-    def annotate_bars(bars):
-        for bar in bars:
-            height = bar.get_height()
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                height + 0.15,
-                f"{height:.2f}",
-                ha="center",
-                va="bottom",
-                fontsize=10,
-            )
-
-    annotate_bars(bars_far)
-    annotate_bars(bars_frr)
-    annotate_bars(bars_eer)
-
-    plt.tight_layout()
-    plt.show()
+    _save(save_path, fig)
 
 
-def plot_pca_3d(X, y):
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+def plot_metric_vs_trainsize(
+    summary_long, metric="EER", save_path=None, lower_better=True
+):
+    """Metric vs. training-set size, one line per model with a 95% CI band.
 
-    pca = PCA(n_components=3)
-    pcs = pca.fit_transform(X_scaled)
+    ``summary_long`` is a DataFrame with columns:
+        train_pct, model, mean, ci_lo, ci_hi
+    (one row per train fraction x model). Used for Setting B to locate the
+    smallest training fraction that still keeps the metric low/reliable.
+    """
+    save_path = save_path or results_path("setting_b", f"{metric.lower()}_vs_trainsize.png")
 
-    colors = ["blue" if label == 0 else "orange" for label in y]
+    label = _METRIC_LABELS.get(metric, metric)
+
+    plt.figure(figsize=(9, 6))
+    colors = plt.cm.tab10.colors
+    for i, (model, sub) in enumerate(summary_long.groupby("model")):
+        sub = sub.sort_values("train_pct")  # ascending: 10% ... 70% left to right
+        x = sub["train_pct"].to_numpy()     # training set size (% of sessions)
+        color = colors[i % len(colors)]
+        plt.plot(x, sub["mean"], marker="o", color=color, lw=2, label=model)
+        plt.fill_between(x, sub["ci_lo"], sub["ci_hi"], color=color, alpha=0.15)
+
+    plt.xlabel("Training set size (% of sessions / impostor users)")
+    plt.ylabel(f"{label} (%)  —  mean [95% CI]")
+    plt.title(f"Setting B: {label} vs. training size")
+    if lower_better:
+        plt.ylim(bottom=0)
+    plt.grid(alpha=0.3)
+    plt.legend(title="Model")
+    _save(save_path)
+
+
+def plot_feature_selection_frequency(
+    results, save_path=None, min_freq=20
+):
+    """Heatmap of how often each feature was selected, per training ratio.
+
+    ``results`` is the Setting-B per-seed DataFrame with columns ``model``,
+    ``train_pct`` and ``selected_features`` (a ``;``-joined feature list per
+    run). For each (model, train_pct) the selection frequency is the share of
+    that condition's runs in which a feature appears (% out of, typically, 100
+    seeds). One heatmap is drawn per model; only features selected in at least
+    ``min_freq`` % of runs in some ratio are kept (rows = features, columns =
+    training ratios). Saves ``<base>_<model>.png`` and returns the saved paths.
+    """
+    base = save_path or results_path("setting_b", "setting_b_features.png")
+    root, ext = os.path.splitext(base)
+    saved = []
+
+    for model, mdf in results.groupby("model"):
+        # Per-condition run count, then frequency % of each feature per ratio.
+        counts = {}        # train_pct -> {feature: times selected}
+        n_runs = {}        # train_pct -> number of runs
+        for pct, pdf in mdf.groupby("train_pct"):
+            n_runs[pct] = len(pdf)
+            feats = pdf["selected_features"].fillna("").str.split(";").explode()
+            counts[pct] = feats[feats != ""].value_counts()
+
+        freq = pd.DataFrame(counts).fillna(0)          # features x ratios (counts)
+        freq = freq.divide(pd.Series(n_runs), axis=1) * 100  # -> frequency %
+        freq = freq.sort_index(axis=1)                 # ratios ascending: 10..70
+
+        # Keep features hitting the threshold in at least one ratio.
+        freq = freq[freq.max(axis=1) >= min_freq]
+        if freq.empty:
+            logger.warning(f"No feature reaches {min_freq}% selection for {model}; skipping.")
+            continue
+        # Most consistently selected features at the top.
+        freq = freq.loc[freq.mean(axis=1).sort_values(ascending=False).index]
+
+        height = max(4, 0.35 * len(freq) + 2)
+        plt.figure(figsize=(max(6, 0.9 * freq.shape[1] + 3), height))
+        sns.heatmap(
+            freq, cmap="YlOrRd", annot=True, fmt=".0f",
+            vmin=0, vmax=100, cbar_kws={"label": "Selection frequency (%)"},
+            linewidths=0.5, linecolor="white",
+        )
+        plt.title(f"Feature Selection Frequency by Training Ratio\n{model}")
+        plt.xlabel("Training set size (% of sessions / impostor users)")
+        plt.ylabel("Feature")
+        plt.yticks(rotation=0)
+
+        out = f"{root}_{_slug(model)}{ext}"
+        _save(out, dpi=300)
+        saved.append(out)
+    return saved
+
+
+def plot_det_curves(curves, save_path=None, far_grid=None):
+    """Aggregated DET curves (FAR vs FRR on probit axes), one per model.
+
+    ``curves`` is a dict ``model -> list of (fpr, fnr)`` arrays, one entry per
+    seed. For each model the per-seed FRR is interpolated onto a common FAR
+    grid (vertical averaging), then drawn as the mean with an IQR band across
+    seeds. Probit (normal-deviate) axes spread out the low-error region, which
+    is the standard biometric DET presentation.
+    """
+    save_path = save_path or results_path("models", "det_curves.png")
+    if far_grid is None:
+        # Axes are capped at 25% (FAR = FRR = 25%); the low-error corner is what
+        # matters for biometrics, so don't waste range on the high-error region.
+        far_grid = np.linspace(0.005, 0.25, 200)
+
+    def probit(p):
+        return norm.ppf(np.clip(p, 1e-3, 1 - 1e-3))
+
+    plt.figure(figsize=(7, 7))
+    colors = plt.cm.tab10.colors
+    for i, (model, seed_curves) in enumerate(curves.items()):
+        interp = []
+        for fpr, fnr in seed_curves:
+            fpr, fnr = np.asarray(fpr), np.asarray(fnr)
+            order = np.argsort(fpr)
+            interp.append(np.interp(far_grid, fpr[order], fnr[order]))
+        interp = np.vstack(interp)
+        mean = interp.mean(axis=0)
+        q25 = np.percentile(interp, 25, axis=0)
+        q75 = np.percentile(interp, 75, axis=0)
+
+        color = colors[i % len(colors)]
+        plt.plot(probit(far_grid), probit(mean), color=color, lw=2, label=model)
+        plt.fill_between(
+            probit(far_grid), probit(q25), probit(q75), color=color, alpha=0.15
+        )
+
+    # EER reference line (FAR = FRR).
+    diag = probit(far_grid)
+    plt.plot(diag, diag, color="grey", ls="--", lw=1, label="FAR = FRR (EER)")
+
+    ticks = [0.01, 0.02, 0.05, 0.1, 0.2, 0.25]
+    tick_pos = probit(np.array(ticks))
+    tick_lab = [f"{t * 100:g}" for t in ticks]
+    plt.xticks(tick_pos, tick_lab)
+    plt.yticks(tick_pos, tick_lab)
+    plt.xlim(probit(far_grid[0]), probit(0.25))
+    plt.ylim(probit(0.005), probit(0.25))
+    plt.xlabel("False Acceptance Rate (%)")
+    plt.ylabel("False Rejection Rate (%)")
+    plt.title("DET curves (mean with IQR band over seeds)")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    _save(save_path)
+
+
+def plot_metric_distribution(
+    results, metric="EER", by="model", save_path=None, floor_zero=True, ascending=True
+):
+    """Box + strip plot of a metric across seeds, one box per model.
+
+    ``results`` is the per-seed long DataFrame (columns include ``by`` and
+    ``metric``). Models are ordered by median (ascending for error metrics;
+    set ``ascending=False`` for "higher is better" metrics like AUC).
+    ``floor_zero`` clamps the y-axis at 0 for error rates; set False for AUC.
+    """
+    save_path = save_path or results_path("models", f"{metric.lower()}_distribution.png")
+    order = (
+        results.groupby(by)[metric].median().sort_values(ascending=ascending).index.tolist()
+    )
+    n_seeds = results["seed"].nunique() if "seed" in results else len(results)
+
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(
+        data=results, x=by, y=metric, order=order,
+        color="#AEC7E8", width=0.6, showfliers=False,
+    )
+    sns.stripplot(
+        data=results, x=by, y=metric, order=order,
+        color="#33333A", size=4, alpha=0.5, jitter=0.25,
+    )
+    plt.xlabel("")
+    plt.ylabel(f"{metric} (%)")
+    plt.title(f"{metric} distribution over {n_seeds} seeds")
+    if floor_zero:
+        plt.ylim(bottom=0)
+    plt.grid(axis="y", alpha=0.3)
+    _save(save_path)
+
+
+def plot_pca_3d(X, y, save_path=None):
+    save_path = save_path or results_path("models", "pca_3d.png")
+    X_scaled = StandardScaler().fit_transform(X)
+    pcs = PCA(n_components=3).fit_transform(X_scaled)
+
+    colors = [_CLASS_STYLE.get(label, ("", "grey"))[1] for label in np.asarray(y)]
 
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
-
     ax.scatter(pcs[:, 0], pcs[:, 1], pcs[:, 2], c=colors, s=40, alpha=0.8)
 
-    # Labels
     ax.set_xlabel("PC1")
     ax.set_ylabel("PC2")
     ax.set_zlabel("PC3")
     ax.set_title("3D PCA Projection")
+    ax.legend(handles=_class_legend(), title="Class")
 
-    # Legend
-    legend_elements = [
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label="0",
-            markerfacecolor="blue",
-            markersize=8,
-        ),
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label="1",
-            markerfacecolor="orange",
-            markersize=8,
-        ),
-    ]
-    ax.legend(handles=legend_elements, title="Label")
-
-    plt.show()
+    _save(save_path, fig)
 
 
-def plot_pca_2d(X, y):
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    pca = PCA(n_components=2)
+def plot_pca_2d(X, y, save_path=None):
+    """2D PCA scatter of standardized features, colored by class."""
+    save_path = save_path or results_path("eda", "pca_scatter.png")
+    X_scaled = StandardScaler().fit_transform(X)
+    pca = PCA(n_components=2, random_state=0)
     pcs = pca.fit_transform(X_scaled)
+    var = pca.explained_variance_ratio_
 
-    colors = ["blue" if label == 0 else "orange" for label in y]
+    y = np.asarray(y)
+    plt.figure(figsize=(7, 6))
+    for label, (name, color) in _CLASS_STYLE.items():
+        m = y == label
+        plt.scatter(pcs[m, 0], pcs[m, 1], s=20, alpha=0.6, label=name, color=color)
 
-    plt.figure(figsize=(8, 6))
-    plt.scatter(pcs[:, 0], pcs[:, 1], c=colors, s=30, alpha=0.8)
-
-    # Legend
-    legend_elements = [
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label="0",
-            markerfacecolor="blue",
-            markersize=8,
-        ),
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label="1",
-            markerfacecolor="orange",
-            markersize=8,
-        ),
-    ]
-    plt.legend(handles=legend_elements, title="Label")
-
-    plt.xlabel("PC1")
-    plt.ylabel("PC2")
+    plt.xlabel(f"PC1 ({var[0]:.0%} var)")
+    plt.ylabel(f"PC2 ({var[1]:.0%} var)")
     plt.title("PCA Projection (2D)")
+    plt.legend(title="Class")
     plt.grid(alpha=0.25)
-    plt.show()
+    _save(save_path)
 
 
-def plot_roc_curve(fpr, tpr, roc):
+def plot_roc_curve(fpr, tpr, roc, save_path=None):
+    save_path = save_path or results_path("models", "roc_curve.png")
     plt.figure(figsize=(7, 6))
     plt.plot(fpr, tpr, label=f"AUC = {roc:.4f}")
     plt.plot([0, 1], [0, 1], linestyle="--")
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
-    plt.title(f"ROC Curve")
+    plt.title("ROC Curve")
     plt.legend()
     plt.grid(True)
-    plt.show()
+    _save(save_path)
 
 
-def plot_far_frr_eer(fpr, tpr, thresholds, title):
-    # FAR = FPR
+def plot_far_frr_eer(fpr, tpr, thresholds, title, save_path=None):
+    save_path = save_path or results_path("models", f"far_frr_eer_{_slug(title)}.png")
+
+    # FAR = FPR, FRR = 1 - TPR
     far = fpr
-
-    # FRR = 1 - TPR
     frr = 1 - tpr
 
     # EER point
@@ -175,7 +396,6 @@ def plot_far_frr_eer(fpr, tpr, thresholds, title):
     eer = far[eer_idx]
     eer_threshold = thresholds[eer_idx]
 
-    # Plot
     plt.figure(figsize=(8, 6))
     plt.plot(thresholds, far, label="FAR (False Acceptance Rate)")
     plt.plot(thresholds, frr, label="FRR (False Rejection Rate)")
@@ -186,8 +406,6 @@ def plot_far_frr_eer(fpr, tpr, thresholds, title):
         label=f"EER Threshold = {eer_threshold:.4f}",
     )
     plt.axhline(eer, color="green", linestyle="--", label=f"EER = {eer*100:.2f}%")
-
-    # Point mark
     plt.scatter([eer_threshold], [eer], color="red")
 
     plt.xlabel("Threshold")
@@ -195,13 +413,13 @@ def plot_far_frr_eer(fpr, tpr, thresholds, title):
     plt.title(title)
     plt.legend()
     plt.grid(True)
-    plt.show()
+    _save(save_path)
 
-    print(f"EER: {eer * 100:.2f}%")
-    print(f"EER Threshold: {eer_threshold:.4f}")
+    logger.info(f"EER: {eer * 100:.2f}%")
+    logger.info(f"EER Threshold: {eer_threshold:.4f}")
 
 
-def plot_det_curve(fpr, fnr, title):
+def plot_det_curve(fpr, fnr, title, save_path=None):
     """
     Plots a Detection Error Tradeoff (DET) curve.
 
@@ -210,140 +428,76 @@ def plot_det_curve(fpr, fnr, title):
     - fnr: array-like, false negative rates (values between 0 and 1)
     - title: str, title of the plot
     """
+    save_path = save_path or results_path("models", f"det_curve_{_slug(title)}.png")
 
-    # Convert rates to normal deviate (probit)
     def probit(p):
-        # Avoid inf by clipping
         p = np.clip(p, 1e-10, 1 - 1e-10)
         return norm.ppf(p)
 
     fpr_nd = probit(fpr)
     fnr_nd = probit(fnr)
 
-    # Create DET plot
     plt.figure(figsize=(6, 6))
     plt.plot(fpr_nd, fnr_nd, marker="o", linestyle="-")
-
-    # # Set axis labels with probability scale
-    # ticks = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]
-    # tick_labels = [str(t*100) for t in ticks]
-    # tick_positions = probit(np.array(ticks))
-
-    # plt.xticks(tick_positions, tick_labels)
-    # plt.yticks(tick_positions, tick_labels)
-
     plt.xlabel("False Positive Rate (%)")
     plt.ylabel("False Negative Rate (%)")
     plt.title(title)
     plt.grid(True)
-    plt.show()
+    _save(save_path)
 
 
-def plot_features(X, y, col_x, col_y):
+def plot_features(X, y, col_x, col_y, save_path=None):
     if col_x not in X.columns:
         raise ValueError(f"{col_x} not found in X columns.")
     if col_y not in X.columns:
         raise ValueError(f"{col_y} not found in X columns.")
 
-    x_vals = X[col_x].values
-    y_vals = X[col_y].values
-    labels = y.values
-    colors = ["blue" if label == 0 else "orange" for label in labels]
+    save_path = save_path or results_path(
+        "features", f"{_slug(col_x)}_vs_{_slug(col_y)}.png"
+    )
+
+    labels = np.asarray(y)
+    colors = [_CLASS_STYLE.get(label, ("", "grey"))[1] for label in labels]
+
     plt.figure(figsize=(8, 6))
-    plt.scatter(x_vals, y_vals, c=colors, s=20, alpha=0.7)
-    # Add a legend
-    legend_elements = [
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label="0",
-            markerfacecolor="blue",
-            markersize=8,
-        ),
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label="1",
-            markerfacecolor="orange",
-            markersize=8,
-        ),
-    ]
-    plt.legend(handles=legend_elements, title="Label")
+    plt.scatter(X[col_x].values, X[col_y].values, c=colors, s=20, alpha=0.7)
+    plt.legend(handles=_class_legend(), title="Label")
     plt.xlabel(col_x)
     plt.ylabel(col_y)
     plt.grid(alpha=0.2)
     plt.title(f"{col_x} vs {col_y}")
-    # plt.savefig(f"results/plots{f'{col_x}_vs_{col_y}'}", dpi=300, bbox_inches="tight")
-    plt.show()
+    _save(save_path)
 
 
 def plot_test_predictions(X_test, y_test, y_pred, col_x, col_y, save_path=None):
     """
     Scatter plot of two test features colored by classifier predictions.
-
-    Parameters:
-    - X_test: pd.DataFrame, test features
-    - y_test: pd.Series, true labels (optional, can use for legend)
-    - y_pred: array-like, predicted labels from classifier
-    - col_x, col_y: str, columns to plot
-    - save_path: str, optional path to save the plot
     """
     if col_x not in X_test.columns or col_y not in X_test.columns:
         raise ValueError(f"Columns {col_x} or {col_y} not found in X_test")
 
-    x_vals = X_test[col_x].values
-    y_vals = X_test[col_y].values
+    save_path = save_path or results_path(
+        "predictions", f"{_slug(col_x)}_vs_{_slug(col_y)}.png"
+    )
 
-    # Map predictions to colors
-    colors = ["blue" if pred == 0 else "orange" for pred in y_pred]
+    colors = [_CLASS_STYLE.get(pred, ("", "grey"))[1] for pred in np.asarray(y_pred)]
 
     plt.figure(figsize=(7, 5))
-    plt.scatter(x_vals, y_vals, c=colors, alpha=0.7, s=50)
-
-    # Optional: add legend for predictions
-    legend_elements = [
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label="Pred 0",
-            markerfacecolor="blue",
-            markersize=8,
-        ),
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            label="Pred 1",
-            markerfacecolor="orange",
-            markersize=8,
-        ),
-    ]
-    plt.legend(handles=legend_elements, title="Predicted Label")
-
+    plt.scatter(X_test[col_x].values, X_test[col_y].values, c=colors, alpha=0.7, s=50)
+    plt.legend(handles=_class_legend(), title="Predicted Label")
     plt.xlabel(col_x)
     plt.ylabel(col_y)
     plt.title(f"{col_x} vs {col_y} (Predictions)")
     plt.grid(alpha=0.2)
-    plt.tight_layout()
-
-    # if save_path:
-    #     plt.savefig(save_path, dpi=300)
-    plt.show()
+    _save(save_path)
 
 
-def plot_metric(metric_values, metric_name, models):
+def plot_metric(metric_values, metric_name, models, save_path=None):
+    save_path = save_path or results_path("metrics", f"comparison_{_slug(metric_name)}.png")
     plt.figure(figsize=(2 * len(models), 4))
     plt.plot(
         models, metric_values, linestyle="--", marker="o", markersize=8, color="orange"
     )
-    # plt.xticks(rotation=45, ha="right")
     mpl.rcParams["axes.labelsize"] = 20
     plt.ylabel(metric_name)
     plt.ylim(
@@ -351,41 +505,38 @@ def plot_metric(metric_values, metric_name, models):
     )
     plt.grid(True)
     plt.title("Model Comparison")
-    plt.tight_layout()
-    save_path = f"results/metrics/comparison_{metric_name}.png"
-    plt.savefig(save_path)
-    plt.show()
+    _save(save_path)
 
 
-def plot_learning_curve(
-    train_losses, val_losses, epochs, save_path="results/plots/learning_curve.png"
-):
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+def plot_learning_curve(train_losses, val_losses, epochs, save_path=None):
+    save_path = save_path or results_path("models", "learning_curve.png")
     plt.figure(figsize=(6, 4))
-    plt.plot(range(1, epochs + 1), train_losses, color="tab:blue", lw=2)
-    plt.plot(range(1, epochs + 1), val_losses, color="tab:orange", lw=2)
+    plt.plot(range(1, epochs + 1), train_losses, color="tab:blue", lw=2, label="train")
+    plt.plot(range(1, epochs + 1), val_losses, color="tab:orange", lw=2, label="val")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.title("Training Loss Curve")
+    plt.legend()
     plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(f"{save_path}", dpi=300, bbox_inches="tight")
-    plt.show()
+    _save(save_path)
 
 
-def plot_conf_matrix(
-    confusion_matrix, model, title, save_path="results/plots/confusion_matrix.png"
-):
+def plot_conf_matrix(confusion_matrix, model, title, save_path=None):
+    save_path = save_path or results_path("models", f"conf_matrix_{_slug(title)}.png")
 
     disp = ConfusionMatrixDisplay(
         confusion_matrix=confusion_matrix, display_labels=model.classes_
     )
-
     disp.plot(cmap="Blues")
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
     plt.title(title)
-    plt.show()
+    _save(save_path)
+
+
+# ---------------------------------------------------------------------------
+# Per-recording exploratory plots (read raw CSVs from a recording folder)
+# ---------------------------------------------------------------------------
 
 
 def compare_filter_unfiltered_data(
@@ -397,9 +548,8 @@ def compare_filter_unfiltered_data(
     ymin = fixation_unfiltered["fixation y [px]"].min() - 50
     ymax = fixation_unfiltered["fixation y [px]"].max() + 50
 
-    figure, axes = plt.subplots(1, 2, figsize=(14, 6), sharex=True, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharex=True, sharey=True)
 
-    # --- Left: Unfiltered ---
     axes[0].scatter(
         fixation_unfiltered["fixation x [px]"], fixation_unfiltered["fixation y [px]"]
     )
@@ -409,7 +559,6 @@ def compare_filter_unfiltered_data(
     axes[0].set_xlabel("Fixation X [px]")
     axes[0].set_ylabel("Fixation Y [px]")
 
-    # --- Right: Filtered ---
     axes[1].scatter(
         fixation_filtered["fixation x [px]"], fixation_filtered["fixation y [px]"]
     )
@@ -418,17 +567,7 @@ def compare_filter_unfiltered_data(
     axes[1].set_title("Filtered Fixations")
     axes[1].set_xlabel("Fixation X [px]")
 
-    save_dir = os.path.join(data_path_filtered, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path_filtered, plot_name), fig)
 
 
 def get_axis_limits(fixations):
@@ -442,7 +581,7 @@ def get_axis_limits(fixations):
     return xmin, xmax, ymin, ymax
 
 
-def plot_transitions(data_path, save_path="results/plots/transitions.png"):
+def plot_transitions(data_path, plot_name="transitions.png"):
     fixations = pd.read_csv(data_path + "/fixations.csv")
     xmin, xmax, ymin, ymax = get_axis_limits(fixations)
 
@@ -451,15 +590,11 @@ def plot_transitions(data_path, save_path="results/plots/transitions.png"):
     transitions = fixations["transition"].values
 
     plt.figure(figsize=(8, 6))
-
     for i in range(len(fixations) - 1):
-        x0, y0 = x[i], y[i]
-        x1, y1 = x[i + 1], y[i + 1]
         color = "orange" if transitions[i + 1] == 1 else "blue"
-        plt.plot([x0, x1], [y0, y1], color=color, linewidth=2)
+        plt.plot([x[i], x[i + 1]], [y[i], y[i + 1]], color=color, linewidth=2)
 
     plt.scatter(x, y, s=40, color="black", alpha=0.7)
-
     for i in range(len(fixations)):
         plt.text(x[i] + 7.5, y[i] + 7.5, str(i), fontsize=9)
 
@@ -473,12 +608,10 @@ def plot_transitions(data_path, save_path="results/plots/transitions.png"):
     ax.set_ylim(ymax, ymin)  # inverted axis
     ax.set_aspect("equal")
 
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
-    plt.show()
+    _save(_recording_path(data_path, plot_name))
 
 
-def plot_regions(data_path, save_path="results/plots/regions.png"):
+def plot_regions(data_path, plot_name="regions.png"):
     fixations = pd.read_csv(data_path + "/fixations.csv")
     screen = fixations[fixations["region"] == "screen"]
     keyboard = fixations[fixations["region"] == "keyboard"]
@@ -486,22 +619,13 @@ def plot_regions(data_path, save_path="results/plots/regions.png"):
     xmin, xmax, ymin, ymax = get_axis_limits(fixations)
 
     plt.figure(figsize=(8, 6))
-
     plt.scatter(
-        screen["fixation x [px]"],
-        screen["fixation y [px]"],
-        s=20,
-        c="orange",
-        label="Screen",
-        alpha=0.7,
+        screen["fixation x [px]"], screen["fixation y [px]"],
+        s=20, c="orange", label="Screen", alpha=0.7,
     )
     plt.scatter(
-        keyboard["fixation x [px]"],
-        keyboard["fixation y [px]"],
-        s=20,
-        c="blue",
-        label="Keyboard",
-        alpha=0.7,
+        keyboard["fixation x [px]"], keyboard["fixation y [px]"],
+        s=20, c="blue", label="Keyboard", alpha=0.7,
     )
 
     plt.xlabel("Fixation x [px]")
@@ -515,47 +639,32 @@ def plot_regions(data_path, save_path="results/plots/regions.png"):
     ax.set_ylim(ymax, ymin)  # inverted axis
     ax.set_aspect("equal")
 
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
-    plt.show()
+    _save(_recording_path(data_path, plot_name))
 
 
-def plot_fixation_map_with_duration(
-    data_path, save_path="results/plots/fixation_map_duration.png"
-):
-    import matplotlib.pyplot as plt
-    import pandas as pd
-
+def plot_fixation_map_with_duration(data_path, plot_name="fixation_map_duration.png"):
     fixations = pd.read_csv(data_path + "/fixations.csv")
 
     x = fixations["fixation x [px]"]
     y = fixations["fixation y [px]"]
-    d = fixations["duration [ms]"]  # ← change this if needed
+    d = fixations["duration [ms]"]
 
-    # Normalize duration → reasonable marker sizes
-    # (prevents huge/small points)
+    # Normalize duration -> reasonable marker sizes (prevents huge/small points)
     size = (d - d.min()) / (d.max() - d.min() + 1e-6)
     size = 50 + size * 300  # base size + scale factor
 
     plt.figure(figsize=(8, 6))
-
-    # Plot fixations
     plt.scatter(x, y, s=size, c="orange", alpha=0.6, edgecolor="black", linewidth=0.5)
-
-    # Axis labels, title
     plt.xlabel("Fixation x [px]")
     plt.ylabel("Fixation y [px]")
     plt.title("Fixation Map")
     plt.grid(alpha=0.2)
 
-    # Invert y-axis for screen coordinate system
     ax = plt.gca()
     ax.invert_yaxis()
     ax.set_aspect("equal", adjustable="box")
 
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
-    plt.show()
+    _save(_recording_path(data_path, plot_name))
 
 
 def plot_gaze_scanpath(data_path, plot_name="gaze_scanpath.png"):
@@ -567,19 +676,8 @@ def plot_gaze_scanpath(data_path, plot_name="gaze_scanpath.png"):
     plt.ylabel("Gaze Y")
     plt.gca().invert_yaxis()
     plt.title("Gaze ScanPath")
-    plt.tight_layout()
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name))
 
 
 def plot_gaze_heatmap(data_path, plot_name="gaze_heatmap.png"):
@@ -594,14 +692,9 @@ def plot_gaze_heatmap(data_path, plot_name="gaze_heatmap.png"):
     cmap.set_under(cmap(0))
 
     fig, ax = plt.subplots(figsize=(8, 6))
-
     h1 = ax.hist2d(
-        gaze["gaze x [px]"],
-        gaze["gaze y [px]"],
-        bins=100,
-        cmap=cmap,
-        range=[[xmin, xmax], [ymin, ymax]],
-        vmin=0.01,
+        gaze["gaze x [px]"], gaze["gaze y [px]"], bins=100, cmap=cmap,
+        range=[[xmin, xmax], [ymin, ymax]], vmin=0.01,
     )
 
     ax.set_ylim(ymin, ymax)
@@ -611,17 +704,7 @@ def plot_gaze_heatmap(data_path, plot_name="gaze_heatmap.png"):
     ax.set_ylabel("Gaze Y [px]")
     fig.colorbar(h1[3], ax=ax, label="Count")
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name), fig)
 
 
 def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
@@ -639,7 +722,6 @@ def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
         alpha=0.6,
         edgecolor="w",
         linewidth=0.5,
-        # palette="viridis"
     )
 
     ax.set_xlim(gaze["gaze x [px]"].min(), gaze["gaze x [px]"].max())
@@ -653,17 +735,7 @@ def plot_fixation_spatial_map(data_path, plot_name="fixation_spatial_map.png"):
     plt.grid(True, which="minor", lw=0.25)
     plt.grid(True, which="major", lw=0.5, alpha=0.3)
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name))
 
 
 def plot_fixation_duration_histogram(data_path, plot_name="fixation_duration_hist.png"):
@@ -672,11 +744,7 @@ def plot_fixation_duration_histogram(data_path, plot_name="fixation_duration_his
     sns.set_theme(style="whitegrid", context="talk")
     plt.figure(figsize=(10, 6))
     ax = sns.histplot(
-        data=fixations,
-        x="duration [ms]",
-        bins=30,
-        kde=True,
-        color="royalblue",
+        data=fixations, x="duration [ms]", bins=30, kde=True, color="royalblue",
         alpha=0.7,
     )
 
@@ -685,73 +753,40 @@ def plot_fixation_duration_histogram(data_path, plot_name="fixation_duration_his
     ax.set_title("Distribution of Fixation Durations", fontsize=14, pad=15)
     sns.despine()
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name))
 
 
 def plot_gaze_over_time(data_path, plot_name="gaze_x_y_over_time.png"):
     gaze = pd.read_csv(f"{data_path}/gaze.csv")
-    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
-
     gaze["timestamp [s]"] = gaze["timestamp [ns]"] / 1e9
-    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
 
     fig, axes = plt.subplots(2, 1, figsize=(14, 5), sharex=True)
 
-    ax = axes[0]
-    ax.plot(gaze["timestamp [s]"], gaze["gaze x [px]"], color="blue")
-    ax.set_title("Gaze x Over Time")
-    ax.set_xlabel("Time [s]")
-    ax.set_ylabel("Gaze x [px]")
+    axes[0].plot(gaze["timestamp [s]"], gaze["gaze x [px]"], color="blue")
+    axes[0].set_title("Gaze x Over Time")
+    axes[0].set_xlabel("Time [s]")
+    axes[0].set_ylabel("Gaze x [px]")
 
-    ax = axes[1]
-    ax.plot(gaze["timestamp [s]"], gaze["gaze y [px]"], color="orange")
-    ax.set_title("Gaze Y Over Time")
-    ax.set_xlabel("Time [s]")
-    ax.set_ylabel("Gaze Y [px]")
+    axes[1].plot(gaze["timestamp [s]"], gaze["gaze y [px]"], color="orange")
+    axes[1].set_title("Gaze Y Over Time")
+    axes[1].set_xlabel("Time [s]")
+    axes[1].set_ylabel("Gaze Y [px]")
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name), fig)
 
 
 def plot_pupil_diameter_over_time(data_path, plot_name="pupil_diameter_over_time.png"):
     eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
-    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
-
     eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
-    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
 
     fig, ax = plt.subplots(figsize=(12, 5))
-
     ax.plot(
-        eye3d["timestamp [s]"],
-        eye3d["pupil diameter left [mm]"],
-        label="Left Eye",
-        color="blue",
+        eye3d["timestamp [s]"], eye3d["pupil diameter left [mm]"],
+        label="Left Eye", color="blue",
     )
     ax.plot(
-        eye3d["timestamp [s]"],
-        eye3d["pupil diameter right [mm]"],
-        label="Right Eye",
-        color="orange",
+        eye3d["timestamp [s]"], eye3d["pupil diameter right [mm]"],
+        label="Right Eye", color="orange",
     )
 
     ax.set_xlabel("Time [s]")
@@ -759,41 +794,21 @@ def plot_pupil_diameter_over_time(data_path, plot_name="pupil_diameter_over_time
     ax.set_title("Pupil Diameter Over Time (Both Eyes)")
     ax.legend()
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name), fig)
 
 
-def plot_eyelid_aperture_over_time(
-    data_path, plot_name="eyelid_aperture_over_time.png"
-):
+def plot_eyelid_aperture_over_time(data_path, plot_name="eyelid_aperture_over_time.png"):
     eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
-    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
-
     eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
-    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
 
     fig, ax = plt.subplots(figsize=(12, 5))
-
     ax.plot(
-        eye3d["timestamp [s]"],
-        eye3d["eyelid aperture left [mm]"],
-        label="Left Eye",
-        color="blue",
+        eye3d["timestamp [s]"], eye3d["eyelid aperture left [mm]"],
+        label="Left Eye", color="blue",
     )
     ax.plot(
-        eye3d["timestamp [s]"],
-        eye3d["eyelid aperture right [mm]"],
-        label="Right Eye",
-        color="orange",
+        eye3d["timestamp [s]"], eye3d["eyelid aperture right [mm]"],
+        label="Right Eye", color="orange",
     )
 
     ax.set_xlabel("Time [s]")
@@ -801,42 +816,22 @@ def plot_eyelid_aperture_over_time(
     ax.set_title("Eyelid Aperture Over Time")
     ax.legend()
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name), fig)
 
 
 def plot_eyelid_angles_over_time(data_path, plot_name="eyelid_angles_over_time.png"):
     eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
-    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
-
     eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
-    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
 
     fig, ax = plt.subplots(figsize=(12, 5))
-
+    ax.plot(eye3d["timestamp [s]"], eye3d["eyelid angle top left [rad]"], label="Top Left")
     ax.plot(
-        eye3d["timestamp [s]"], eye3d["eyelid angle top left [rad]"], label="Top Left"
-    )
-    ax.plot(
-        eye3d["timestamp [s]"],
-        eye3d["eyelid angle bottom left [rad]"],
+        eye3d["timestamp [s]"], eye3d["eyelid angle bottom left [rad]"],
         label="Bottom Left",
     )
+    ax.plot(eye3d["timestamp [s]"], eye3d["eyelid angle top right [rad]"], label="Top Right")
     ax.plot(
-        eye3d["timestamp [s]"], eye3d["eyelid angle top right [rad]"], label="Top Right"
-    )
-    ax.plot(
-        eye3d["timestamp [s]"],
-        eye3d["eyelid angle bottom right [rad]"],
+        eye3d["timestamp [s]"], eye3d["eyelid angle bottom right [rad]"],
         label="Bottom Right",
     )
 
@@ -845,29 +840,15 @@ def plot_eyelid_angles_over_time(data_path, plot_name="eyelid_angles_over_time.p
     ax.set_title("Eyelid Angles Over Time")
     ax.legend()
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name), fig)
 
 
 def plot_distance_between_pupils_over_time(
     data_path, plot_name="distance_between_pupils_over_time.png"
 ):
     eye3d = pd.read_csv(f"{data_path}/3d_eye_states.csv")
-    keys = pd.read_csv(f"{data_path}/keystrokes.csv")
-
     eye3d["timestamp [s]"] = eye3d["timestamp [ns]"] / 1e9
-    keys["timestamp [s]"] = keys["timestamp [ns]"] / 1e9
     eye3d["timestamp [s]"] -= eye3d["timestamp [s]"].min()
-    keys["timestamp [s]"] -= eye3d["timestamp [s]"]
 
     xl, yl, zl = (
         eye3d["eyeball center left x [mm]"],
@@ -879,60 +860,101 @@ def plot_distance_between_pupils_over_time(
         eye3d["eyeball center right y [mm]"],
         eye3d["eyeball center right z [mm]"],
     )
-
     distance = ((xr - xl) ** 2 + (yr - yl) ** 2 + (zr - zl) ** 2) ** 0.5
 
     fig, ax = plt.subplots(figsize=(12, 5))
-
     ax.plot(eye3d["timestamp [s]"], distance, color="blue")
     ax.set_xlim(0, eye3d["timestamp [s]"].max())
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Distance Between Pupils [mm]")
     ax.set_title("Distance Between Pupils Over Time")
 
-    save_dir = os.path.join(data_path, "plots")
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Full save path for the plot
-    save_path = os.path.join(save_dir, plot_name)
-
-    # Save the figure
-    plt.tight_layout(rect=[0, 0.1, 1, 1])
-    plt.savefig(save_path, bbox_inches="tight")
-    plt.show()
-    plt.close()
+    _save(_recording_path(data_path, plot_name), fig)
 
 
-def plot_eer_tradeoff():# Generate threshold values
-    thresholds = np.linspace(0, 1, 100)
+# ---------------------------------------------------------------------------
+# Dataset-level EDA plots (aggregated session features)
+# ---------------------------------------------------------------------------
 
-    # Simulated FAR and FRR curves
-    far = np.exp(-5 * thresholds)
-    frr = np.exp(-5 * (1 - thresholds))
 
-    # Compute EER point (for dashed line only)
-    eer_index = np.argmin(np.abs(far - frr))
-    eer_threshold = thresholds[eer_index]
+def plot_class_balance(data, target="label", save_path=None):
+    """Bar chart of how many sessions fall in each class."""
+    save_path = save_path or results_path("eda", "class_balance.png")
+    counts = data[target].value_counts().sort_index()
 
-    # Plot
-    plt.figure(figsize=(8, 6))
-    plt.plot(thresholds, far, linewidth=2)
-    plt.plot(thresholds, frr, linewidth=2)
+    plt.figure(figsize=(6, 5))
+    for label, n in counts.items():
+        name, color = _CLASS_STYLE.get(label, (str(label), "grey"))
+        bar = plt.bar(name, n, color=color, alpha=0.85)
+        plt.text(
+            bar[0].get_x() + bar[0].get_width() / 2,
+            n,
+            f"{n}\n({n / len(data):.1%})",
+            ha="center",
+            va="bottom",
+            fontsize=11,
+        )
 
-    # Dashed vertical line at EER threshold
-    plt.axhline(y=0.0825, linestyle='--', linewidth=2, color='black')
+    plt.ylabel("Number of sessions")
+    plt.title("Class Balance")
+    plt.ylim(0, counts.max() * 1.18)
+    plt.grid(axis="y", alpha=0.2)
+    _save(save_path)
 
-    # Place labels near curves with larger font
-    plt.text(0.08, far[5], "False Acceptance Rate", fontsize=14, verticalalignment='center')
-    plt.text(0.575, frr[94], "False Rejection Rate", fontsize=14, verticalalignment='center')
-    plt.text(0.05, 0.15, "Equal Error Rate", fontsize=14, verticalalignment='center')
 
-    # Axis labels with larger font
-    plt.xlabel("Decision Threshold", fontsize=14)
-    plt.ylabel("Error Rate", fontsize=14)
+def plot_feature_auc_ranking(ranking, top=20, save_path=None):
+    """Horizontal bar of the most discriminative features by univariate AUC.
 
-    # Tick label size
-    plt.xticks(fontsize=14)
-    plt.yticks(fontsize=14)
+    Expects a DataFrame with at least ``feature`` and ``auc`` columns
+    (as produced by ``utils.eda.univariate_discriminability``).
+    """
+    save_path = save_path or results_path("eda", "feature_auc_ranking.png")
+    head = ranking.head(top)
 
-    plt.show()
+    plt.figure(figsize=(8, max(4, 0.35 * len(head))))
+    sns.barplot(data=head, x="auc", y="feature", color="royalblue")
+    plt.axvline(0.5, color="grey", ls="--", lw=1, label="chance (0.5)")
+    plt.xlabel("Univariate ROC-AUC (folded to >= 0.5)")
+    plt.ylabel("")
+    plt.title(f"Top {len(head)} features by univariate AUC")
+    plt.legend()
+    plt.grid(axis="x", alpha=0.2)
+    _save(save_path)
+
+
+def plot_feature_distributions(data, features, target="label", save_path=None):
+    """Per-class KDE distributions for a handful of features."""
+    save_path = save_path or results_path("eda", "feature_distributions.png")
+    n = len(features)
+    ncols = 2
+    nrows = int(np.ceil(n / ncols))
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=(11, 4 * nrows))
+    axes = np.atleast_1d(axes).ravel()
+
+    for ax, feat in zip(axes, features):
+        for label, (name, color) in _CLASS_STYLE.items():
+            subset = data[data[target] == label][feat]
+            if subset.empty:
+                continue
+            sns.kdeplot(subset, ax=ax, label=name, fill=True, alpha=0.4, color=color)
+        ax.set_title(feat)
+        ax.legend()
+
+    # Hide any unused axes
+    for ax in axes[n:]:
+        ax.set_visible(False)
+
+    fig.suptitle("Class distributions of selected features", fontsize=14)
+    _save(save_path, fig)
+
+
+def plot_correlation_heatmap(data, features, save_path=None):
+    """Heatmap of pairwise correlations to reveal redundant features."""
+    save_path = save_path or results_path("eda", "correlation_heatmap.png")
+    corr = data[features].corr()
+
+    plt.figure(figsize=(0.5 * len(features) + 3, 0.5 * len(features) + 2))
+    sns.heatmap(corr, cmap="coolwarm", center=0, square=True, cbar_kws={"label": "corr"})
+    plt.title("Feature correlation")
+    _save(save_path)

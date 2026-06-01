@@ -10,7 +10,7 @@ import logging
 import os
 
 
-from preprocess.features import (aggregate_recording, augment_eye_tracking_data)
+from preprocess.features import (aggregate_recording, extract_features)
 from preprocess.filters import (adjust_timestamps, drop_columns, drop_rows,
                                 synchronize_timestamps)
 
@@ -41,8 +41,8 @@ def run_pipeline(data_dir):
         logger.info("Synchronizing timestamps ...")
         synchronize_timestamps(dirpath)
 
-        logger.info("Augmenting data ...")
-        augment_eye_tracking_data(dirpath)
+        logger.info("Creating features ...")
+        extract_features(dirpath)
 
         logger.info("Aggregating features ...")
         aggregate_recording(dirpath, "agg_session")

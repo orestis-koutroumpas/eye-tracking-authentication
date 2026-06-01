@@ -1,2 +1,2 @@
-section id,recording id,blink id,start timestamp [ns],end timestamp [ns],duration [ms]
-5e8e30d0-ad61-415a-89a9-ee09f0639343,b0bce799-6d22-4a2f-9965-27dbb502e464,1,1761211932843613601,1761211933088865601,245
+blink id,start timestamp [ns],end timestamp [ns],duration [ms]
+1,31559269000,31804521000,245

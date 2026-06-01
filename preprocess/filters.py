@@ -1,19 +1,22 @@
 """
-filter_data.py
+Cleaning / preprocessing filters for raw recording CSVs.
 
-Drop rows with outlier gaze points (not implemented)
+  - drop_columns: drop unnecessary columns (section id, recording id, worn, ...)
+  - drop_rows: drop rows with outlier gaze points
+  - adjust_timestamps: shift timestamps using events.start time
+  - synchronize_timestamps: align timestamps across the recording's CSVs
 
-Drop unecessery columns like section id, recording id, worn, etc.
+Importable helpers (not run directly; driven by preprocess_data.py):
+    from preprocess.filters import (drop_columns, drop_rows,
+                                    adjust_timestamps, synchronize_timestamps)
 
-Adjust timestamps using events.start time
-
+    drop_columns(recording_dir)
 """
 
 import logging
 import os
 
 import pandas as pd
-import yaml
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,11 +25,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
-with open("config/params.yml") as f:
-    config = yaml.safe_load(f)
-
-csv_files = [d for d in config["data"]["csv_files"]]
+# Eye-tracking CSV files produced for each recording
+CSV_FILES = [
+    "gaze.csv",
+    "fixations.csv",
+    "saccades.csv",
+    "blinks.csv",
+    "3d_eye_states.csv",
+    "keystrokes.csv",
+]
 
 
 def drop_columns(data_dir: str):
@@ -36,7 +43,7 @@ def drop_columns(data_dir: str):
         "worn",
     ]
     for fname in os.listdir(data_dir):
-        if fname not in csv_files or fname == "keystrokes.csv":
+        if fname not in CSV_FILES or fname == "keystrokes.csv":
             continue
         fpath = os.path.join(data_dir, fname)
         logger.info(f"Processing {fname}...")
@@ -76,7 +83,7 @@ def adjust_timestamps(data_dir: str):
     logger.info(f"Recording start timestamp: {recording_start_ns}")
     # Process CSV files
     for fname in os.listdir(data_dir):
-        if fname not in csv_files or fname == "keystrokes.csv":
+        if fname not in CSV_FILES or fname == "keystrokes.csv":
             continue
 
         fpath = os.path.join(data_dir, fname)
@@ -132,7 +139,7 @@ def synchronize_timestamps(data_dir: str):
     logger.info(f"Recording first timestamp: {t0_ns}")
     # Process CSV files
     for fname in os.listdir(data_dir):
-        if fname not in csv_files:
+        if fname not in CSV_FILES:
             continue
 
         fpath = os.path.join(data_dir, fname)
@@ -193,7 +200,7 @@ def drop_rows(data_dir: str):
 
     # Now apply to other CSVs
     for fname in os.listdir(data_dir):
-        if fname not in csv_files or fname == "gaze.csv" or fname == "keystrokes.csv":
+        if fname not in CSV_FILES or fname == "gaze.csv" or fname == "keystrokes.csv":
             continue
 
         fpath = os.path.join(data_dir, fname)
