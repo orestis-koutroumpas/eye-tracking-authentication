@@ -13,7 +13,7 @@ Inner CV adapts per ratio: with fewer impostor users the grouped CV uses fewer
 folds (and falls back to plain stratified CV at one impostor user).
 
 Usage:
-    python setting_b.py
+    python setting_b_no_augment.py
 """
 
 import logging
@@ -47,15 +47,7 @@ logger = logging.getLogger(__name__)
 DATA_FOLDER = "data"
 BASE_CV = 5               # inner CV folds (reduced per ratio when data is scarce)
 K_GRID = [10, 20, 40, 80]   # RFE n_features_to_select
-TRAIN_FRACTIONS = [0.7, 0.6, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1]
-# Train ratios at or below this threshold get Gaussian-noise augmentation, i.e.
-# whenever the train set is no larger than the test set (50% train and below).
-# Augmentation is added strictly after the split, on training rows only: 3 noisy
-# synthetic copies per class; the original class imbalance is preserved (copies
-# scale both classes by 4x).
-AUGMENT_MAX_TRAIN_FRAC = 0.34
-N_AUG_COPIES = 3
-AUG_NOISE_SCALE = 0.005   # noise std = AUG_NOISE_SCALE * per-feature class std
+TRAIN_FRACTIONS = [0.35, 0.3, 0.25, 0.2, 0.15, 0.1]
 SEEDS = list(range(100))
 METRICS = ["EER", "FAR", "FRR", "AUC", "FAR_at_FRR1"]
 RESULTS_DIR = "results/metrics"
@@ -117,61 +109,12 @@ def _bootstrap_ci(x, n_boot=5000, alpha=0.05, seed=0):
     return tuple(np.percentile(boot, [100 * alpha / 2, 100 * (1 - alpha / 2)]))
 
 
-def augment_training_set(X_train, y_train, groups_train, seed):
-    """Gaussian-noise augmentation of the TRAINING set only (low-data ratios).
-
-    Run strictly after the train/test split so no test information leaks in.
-    For each class separately, ``N_AUG_COPIES`` synthetic copies are drawn as
-    ``X_class + N(0, AUG_NOISE_SCALE * per-feature std)`` using that class's own
-    per-feature std (pandas ddof=1). The same number of copies is added to both
-    classes, so the original class imbalance is preserved (each class is scaled
-    by ``1 + N_AUG_COPIES``). Each synthetic row inherits its source row's CV
-    group, keeping the grouped inner CV leakage-free.
-
-    Returns the augmented (X_train, y_train, groups_train); X_test/y_test are
-    never touched. Evaluation still happens on the original, unmodified test set.
-    """
-    rng = np.random.default_rng(seed)
-    y_arr = y_train.to_numpy()
-    g_arr = groups_train.to_numpy()
-
-    X_synth, y_synth, g_synth = [], [], []
-    for label in (1, 0):  # genuine (1) first, then impostor (0): spec stack order
-        mask = y_arr == label
-        X_class = X_train[mask]
-        if X_class.empty:
-            continue
-        feature_stds = X_class.std(axis=0).to_numpy()
-        Xc = X_class.to_numpy()
-        gc = g_arr[mask]
-        for _ in range(N_AUG_COPIES):
-            noise = rng.normal(0.0, AUG_NOISE_SCALE * feature_stds, Xc.shape)
-            X_synth.append(Xc + noise)
-            y_synth.append(np.full(Xc.shape[0], label, dtype=y_arr.dtype))
-            g_synth.append(gc)
-
-    X_aug = pd.DataFrame(
-        np.vstack([X_train.to_numpy(), *X_synth]), columns=X_train.columns
-    )
-    y_aug = pd.Series(np.hstack([y_arr, *y_synth]), name=y_train.name)
-    g_aug = pd.Series(np.concatenate([g_arr, *g_synth]), name=groups_train.name)
-    return X_aug, y_aug, g_aug
-
-
-def run_seed(seed, models, gen_pct, imp_pct, cv_splits, use_groups, augment=False):
+def run_seed(seed, models, gen_pct, imp_pct, cv_splits, use_groups):
     """Full per-model procedure for one random split at a given train fraction."""
     X_train, y_train, X_test, y_test, groups_train = load_dataset(
         DATA_FOLDER, gen_train_pct=gen_pct, imp_train_pct=imp_pct,
         random_state=seed, return_groups=True,
     )
-
-    # Augmentation (low-data ratios only), strictly after the split. Synthetic
-    # rows are stacked into the training set and inner CV; the test set below is
-    # the original, unmodified X_test / y_test.
-    if augment:
-        X_train, y_train, groups_train = augment_training_set(
-            X_train, y_train, groups_train, seed
-        )
 
     if use_groups:
         cv = StratifiedGroupKFold(n_splits=cv_splits, shuffle=True, random_state=seed)
@@ -271,17 +214,15 @@ def aggregate(results):
 def main():
     models = get_models()
     logger.info(
-        f"Setting B | ratios={[f'{int(f*100)}/{int((1-f)*100)}' for f in TRAIN_FRACTIONS]} "
+        f"Setting B (no augment) | ratios={[f'{int(f*100)}/{int((1-f)*100)}' for f in TRAIN_FRACTIONS]} "
         f"| models={list(models)} | seeds={len(SEEDS)}"
     )
 
     all_records = []
-    ratio_counts, ratio_aug = {}, {}  # per train_pct: composition + augment flag
+    ratio_counts = {}  # per train_pct: composition
     for frac in TRAIN_FRACTIONS:
         cv_splits, use_groups, n_imp_users, min_class, c = ratio_settings(frac)
-        augment = frac <= AUGMENT_MAX_TRAIN_FRAC
         ratio_counts[round(frac * 100)] = c
-        ratio_aug[round(frac * 100)] = augment
         logger.info(
             f"===== RATIO {int(frac*100)}/{int((1-frac)*100)} "
             f"(train/test % of sessions & impostor users) ====="
@@ -298,13 +239,13 @@ def main():
         )
         logger.info(
             f"  min class={min_class} -> cv_splits={cv_splits}, "
-            f"grouped={use_groups}, augment={augment}"
+            f"grouped={use_groups}"
         )
         for seed in SEEDS:
             try:
                 records = run_seed(
                     seed, models, gen_pct=frac, imp_pct=frac,
-                    cv_splits=cv_splits, use_groups=use_groups, augment=augment,
+                    cv_splits=cv_splits, use_groups=use_groups,
                 )
             except Exception as e:  # keep the sweep alive on an edge-case split
                 logger.warning(f"  ratio {frac} seed {seed} failed: {e}")
@@ -315,13 +256,16 @@ def main():
 
     results = pd.DataFrame(all_records)
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    results.to_csv(os.path.join(RESULTS_DIR, "setting_b_per_seed.csv"), index=False)
+    results.to_csv(
+        os.path.join(RESULTS_DIR, "setting_b_per_seed_no_augment.csv"), index=False
+    )
 
     summary = aggregate(results)
-    summary.to_csv(os.path.join(RESULTS_DIR, "setting_b_summary.csv"), index=False)
+    summary.to_csv(
+        os.path.join(RESULTS_DIR, "setting_b_summary_no_augment.csv"), index=False
+    )
 
     # Per-ratio training set composition (saved next to the metrics CSVs).
-    n_aug = 1 + N_AUG_COPIES
     comp_rows = []
     for frac in TRAIN_FRACTIONS:
         pct = round(frac * 100)
@@ -333,14 +277,13 @@ def main():
             "impostor_sessions": c["imp_sessions_train"],
             "impostor_users": c["imp_users_train"],
             "total_train": total,
-            "augmented": ratio_aug[pct],
-            "total_after_aug": total * n_aug if ratio_aug[pct] else total,
         })
     pd.DataFrame(comp_rows).to_csv(
-        os.path.join(RESULTS_DIR, "setting_b_train_composition.csv"), index=False
+        os.path.join(RESULTS_DIR, "setting_b_train_composition_no_augment.csv"),
+        index=False,
     )
 
-    logger.info("======== SETTING B: training set composition by ratio ========")
+    logger.info("======== SETTING B (no augment): training set composition by ratio ========")
     for frac in TRAIN_FRACTIONS:
         pct = round(frac * 100)
         c = ratio_counts[pct]
@@ -348,10 +291,9 @@ def main():
         logger.info(
             f"  train {pct:>3}% | {total} samples: {c['genuine_train']} genuine "
             f"+ {c['imp_sessions_train']} impostor ({c['imp_users_train']} users)"
-            f"{' | augmented' if ratio_aug[pct] else ''}"
         )
 
-    logger.info("======== SETTING B: EER mean [95% CI] by ratio ========")
+    logger.info("======== SETTING B (no augment): EER mean [95% CI] by ratio ========")
     for pct, g in summary.groupby("train_pct", sort=False):
         line = "  ".join(
             f"{r['model']}: {r['EER_mean']:.2f} [{r['EER_ci_lo']:.2f}-{r['EER_ci_hi']:.2f}]"
@@ -359,7 +301,7 @@ def main():
         )
         logger.info(f"  train {pct:>3}% | {line}")
 
-    logger.info("======== SETTING B: hyperparameters (mode over seeds) by ratio ========")
+    logger.info("======== SETTING B (no augment): hyperparameters (mode over seeds) by ratio ========")
     for pct, g in summary.groupby("train_pct", sort=False):
         logger.info(f"  train {pct:>3}%")
         for _, r in g.iterrows():
@@ -371,11 +313,14 @@ def main():
         long["mean"] = summary[f"{metric}_mean"]
         long["ci_lo"] = summary[f"{metric}_ci_lo"]
         long["ci_hi"] = summary[f"{metric}_ci_hi"]
-        plot_metric_vs_trainsize(long, metric=metric, lower_better=(metric != "AUC"))
+        plot_metric_vs_trainsize(
+            long, metric=metric, lower_better=(metric != "AUC"),
+            suffix="_no_augment",
+        )
 
     # Feature-selection frequency heatmap (one per model): how often each
     # feature is picked by RFE across the 100 seeds, per training ratio.
-    plot_feature_selection_frequency(results)
+    plot_feature_selection_frequency(results, suffix="_no_augment")
 
 
 if __name__ == "__main__":

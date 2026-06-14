@@ -5,13 +5,15 @@ Reads the per-setting summary CSVs written by setting_a.py / setting_b.py and
 renders compact Markdown tables (mean [95% CI]) suitable for a report or README.
 
 Reads:
-    results/metrics/setting_a_summary.csv   per-model, MultiIndex (metric, stat)
-    results/metrics/setting_b_summary.csv   per train_pct x model, flat columns
+    results/metrics/setting_a_summary.csv             per-model, MultiIndex (metric, stat)
+    results/metrics/setting_b_summary.csv             per train_pct x model, flat columns
+    results/metrics/setting_b_summary_no_augment.csv  same layout, no augmentation
 
 Writes (and prints):
-    results/tables/setting_a_summary.md     one row per model
-    results/tables/setting_b_summary.md     one table per metric, train_pct x model
-    results/tables/setting_b_train_composition.md   train-set composition by ratio
+    results/tables/setting_a_summary.md               one row per model
+    results/tables/setting_b_summary.md               one table per metric, train_pct x model
+    results/tables/setting_b_train_composition.md     train-set composition by ratio
+    results/tables/setting_b_augment_comparison.md    EER augment vs no-augment (train < 35%)
 
 Usage:
     python utils/summary_tables.py
@@ -44,6 +46,10 @@ METRIC_LABELS = {
     "AUC": "AUC",
     "FAR_at_FRR1": "FAR @ FRR=1%",
 }
+
+# Only train ratios strictly below this threshold are included in the
+# augment vs no-augment comparison table.
+LOW_DATA_THRESHOLD = 35
 
 
 def _md_table(headers, rows):
@@ -174,6 +180,64 @@ def build_setting_b_composition_table():
     return "\n\n".join([title, note, _md_table(headers, rows)])
 
 
+def build_augment_comparison_table():
+    """EER comparison: augmented vs no-augment, one flat table, train < 35% only.
+
+    Single table with 4 rows per train ratio (one per model). Columns:
+    train %, model, EER (aug), EER (no aug), Δ EER.
+    Δ EER = aug − no_aug: negative means augmentation helped (lower EER),
+    positive means it hurt.
+    """
+    aug_path = os.path.join(METRICS_DIR, "setting_b_summary.csv")
+    no_aug_path = os.path.join(METRICS_DIR, "setting_b_summary_no_augment.csv")
+
+    if not os.path.exists(aug_path) or not os.path.exists(no_aug_path):
+        logger.warning(
+            "Skipping augment comparison: one or both summary CSVs not found "
+            f"({aug_path}, {no_aug_path})"
+        )
+        return None
+
+    aug = pd.read_csv(aug_path)
+    no_aug = pd.read_csv(no_aug_path)
+
+    # Restrict to ratios strictly below the threshold.
+    aug = aug[aug["train_pct"] < LOW_DATA_THRESHOLD]
+    no_aug = no_aug[no_aug["train_pct"] < LOW_DATA_THRESHOLD]
+
+    models = list(dict.fromkeys(aug["model"]))  # order of first appearance
+    train_pcts = sorted(aug["train_pct"].unique(), reverse=True)
+
+    headers = ["train %", "model", "EER (augmented)", "EER (no augment)", "Δ EER"]
+    rows = []
+    for pct in train_pcts:
+        for model in models:
+            a = aug[(aug["train_pct"] == pct) & (aug["model"] == model)]
+            n = no_aug[(no_aug["train_pct"] == pct) & (no_aug["model"] == model)]
+
+            if a.empty or n.empty:
+                rows.append([f"{pct}", model, "-", "-", "-"])
+                continue
+
+            a, n = a.iloc[0], n.iloc[0]
+            aug_cell = _ci_cell(a["EER_mean"], a["EER_ci_lo"], a["EER_ci_hi"])
+            no_aug_cell = _ci_cell(n["EER_mean"], n["EER_ci_lo"], n["EER_ci_hi"])
+
+            diff = a["EER_mean"] - n["EER_mean"]
+            sign = "+" if diff >= 0 else "−"
+            diff_cell = f"{sign}{abs(diff):.2f}"
+
+            rows.append([f"{pct}", model, aug_cell, no_aug_cell, diff_cell])
+
+    title = "## Setting B - augmentation effect on EER (train < 35%)"
+    note = (
+        "_EER mean [95% bootstrap CI]. "
+        "Δ EER = aug − no_aug: negative (−) means augmentation reduced EER (improved); "
+        "positive (+) means it increased EER (hurt)._"
+    )
+    return "\n\n".join([title, note, _md_table(headers, rows)])
+
+
 def _write(name, content):
     os.makedirs(TABLES_DIR, exist_ok=True)
     path = os.path.join(TABLES_DIR, name)
@@ -187,6 +251,10 @@ def main():
     _write("setting_a_summary.md", build_setting_a_table())
     _write("setting_b_summary.md", build_setting_b_tables())
     _write("setting_b_train_composition.md", build_setting_b_composition_table())
+
+    comparison = build_augment_comparison_table()
+    if comparison is not None:
+        _write("setting_b_augment_comparison.md", comparison)
 
 
 if __name__ == "__main__":
