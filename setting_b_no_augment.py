@@ -22,6 +22,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LogisticRegression
@@ -35,7 +36,7 @@ from sklearn.svm import SVC, LinearSVC
 from load_data import load_dataset
 from utils.metrics import calculate_eer, evaluate_model
 from utils.plotting import (plot_feature_selection_frequency,
-                            plot_metric_vs_trainsize)
+                            plot_metric_vs_trainsize, results_path)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -83,7 +84,23 @@ def get_models():
             RandomForestClassifier(random_state=42),
             {"clf__n_estimators": [100, 300], "clf__max_depth": [None, 10, 20]},
         ),
-    }
+        "MLP": (
+            MLPClassifier(solver="lbfgs", activation="relu", max_iter=2000, max_fun=20000, tol=1e-6, random_state=42),
+            {
+                "clf__alpha": [10.0, 1.0, 1e-1, 1e-2, 1e-3, 1e-4],
+                "clf__hidden_layer_sizes": [(8,), (16,), (32,), (64,), (32,16)]
+            }
+        )
+        }
+        
+        
+def _mlp_n_iter(pipeline):
+    """Optimiser iterations of a fitted MLP step (NaN for the other models).
+
+    Equal to max_iter means lbfgs stopped before converging.
+    """
+    clf = pipeline.named_steps["clf"]
+    return clf.n_iter_ if isinstance(clf, MLPClassifier) else np.nan
 
 
 def build_pipeline(clf):
@@ -146,6 +163,9 @@ def run_seed(seed, models, gen_pct, imp_pct, cv_splits, use_groups):
                 "n_features": len(selected_features),
                 "best_params": gs.best_params_,
                 "selected_features": ";".join(selected_features),
+                "mlp_n_iter": _mlp_n_iter(best),
+                # configurations sharing the best inner-CV score (ties)
+                "n_tied_best": int((gs.cv_results_["rank_test_score"] == 1).sum()),
             }
         )
     return records
@@ -351,12 +371,14 @@ def main():
         long["ci_hi"] = summary[f"{metric}_ci_hi"]
         plot_metric_vs_trainsize(
             long, metric=metric, lower_better=(metric != "AUC"),
-            suffix="_no_augment",
+            save_path=results_path(f"setting_b{sfx}_no_augment", f"{metric.lower()}_vs_trainsize.png"),
         )
 
     # Feature-selection frequency heatmap (one per model): how often each
     # feature is picked by RFE across the 100 seeds, per training ratio.
-    plot_feature_selection_frequency(results, suffix="_no_augment")
+    plot_feature_selection_frequency(
+        results, save_path=results_path(f"setting_b{sfx}_no_augment", "setting_b_features.png")
+    )
 
 
 if __name__ == "__main__":
