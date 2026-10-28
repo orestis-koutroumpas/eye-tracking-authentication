@@ -36,7 +36,7 @@ from sklearn.svm import SVC, LinearSVC
 from load_data import load_dataset
 from utils.metrics import calculate_eer, evaluate_model
 from utils.plotting import (plot_feature_selection_frequency,
-                            plot_metric_vs_trainsize)
+                            plot_metric_vs_trainsize, results_path)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -371,12 +371,14 @@ def main():
         long["ci_hi"] = summary[f"{metric}_ci_hi"]
         plot_metric_vs_trainsize(
             long, metric=metric, lower_better=(metric != "AUC"),
-            suffix="_no_augment",
+            save_path=results_path(f"setting_b{sfx}_no_augment", f"{metric.lower()}_vs_trainsize.png"),
         )
 
     # Feature-selection frequency heatmap (one per model): how often each
     # feature is picked by RFE across the 100 seeds, per training ratio.
-    plot_feature_selection_frequency(results, suffix="_no_augment")
+    plot_feature_selection_frequency(
+        results, save_path=results_path(f"setting_b{sfx}_no_augment", "setting_b_features.png")
+    )
 
 
 if __name__ == "__main__":
