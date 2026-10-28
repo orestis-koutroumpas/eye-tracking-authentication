@@ -189,7 +189,7 @@ def build_augment_comparison_table():
     positive means it hurt.
     """
     aug_path = os.path.join(METRICS_DIR, "setting_b_summary.csv")
-    no_aug_path = os.path.join(METRICS_DIR, "setting_b_summary_no_augment.csv")
+    no_aug_path = os.path.join(METRICS_DIR, "setting_b_no_augment_summary.csv")
 
     if not os.path.exists(aug_path) or not os.path.exists(no_aug_path):
         logger.warning(
