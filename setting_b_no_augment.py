@@ -16,6 +16,7 @@ Usage:
     python setting_b_no_augment.py
 """
 
+import argparse
 import logging
 import os
 
@@ -210,9 +211,44 @@ def aggregate(results):
         rows.append(row)
     return pd.DataFrame(rows)
 
+def parse_args():
+    """Command-line options; the defaults reproduce the original run."""
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("--data-dir", default=DATA_FOLDER,
+                        help="dataset root containing genuine/ and impostors/")
+    parser.add_argument("--models", default=None,
+                        help='comma-separated get_models() keys, e.g. "MLP"')
+    parser.add_argument("--tag", default="",
+                        help="suffix added to every output file and plot folder")
+    parser.add_argument("--seeds", type=int, default=len(SEEDS),
+                        help="number of seeds, 0..N-1 (default: 100)")
+    parser.add_argument("--ratios", default=None,
+                        help='comma-separated train fractions, e.g. "0.7,0.1"')
+    return parser.parse_args()
+
+
+def select_models(models, names):
+    """Keep only the comma-separated model names (all models when empty)."""
+    if not names:
+        return models
+    wanted = [n.strip() for n in names.split(",")]
+    unknown = [n for n in wanted if n not in models]
+    if unknown:
+        raise SystemExit(f"Unknown model(s) {unknown}; choose from {list(models)}")
+    return {n: models[n] for n in wanted}
+
 
 def main():
-    models = get_models()
+    global DATA_FOLDER, SEEDS, TRAIN_FRACTIONS
+    args = parse_args()
+    DATA_FOLDER = args.data_dir
+    SEEDS = list(range(args.seeds))
+    if args.ratios:
+        TRAIN_FRACTIONS = [float(r) for r in args.ratios.split(",")]
+    sfx = f"_{args.tag}" if args.tag else ""
+    models = select_models(get_models(), args.models)
     logger.info(
         f"Setting B (no augment) | ratios={[f'{int(f*100)}/{int((1-f)*100)}' for f in TRAIN_FRACTIONS]} "
         f"| models={list(models)} | seeds={len(SEEDS)}"
@@ -255,14 +291,15 @@ def main():
             all_records.extend(records)
 
     results = pd.DataFrame(all_records)
-    os.makedirs(RESULTS_DIR, exist_ok=True)
+    res_dir = RESULTS_DIR + sfx
+    os.makedirs(res_dir, exist_ok=True)
     results.to_csv(
-        os.path.join(RESULTS_DIR, "setting_b_per_seed_no_augment.csv"), index=False
+        os.path.join(res_dir, f"setting_b_no_augment{sfx}_per_seed.csv"), index=False
     )
 
     summary = aggregate(results)
     summary.to_csv(
-        os.path.join(RESULTS_DIR, "setting_b_summary_no_augment.csv"), index=False
+        os.path.join(res_dir, f"setting_b_no_augment{sfx}_summary.csv"), index=False
     )
 
     # Per-ratio training set composition (saved next to the metrics CSVs).
@@ -279,8 +316,7 @@ def main():
             "total_train": total,
         })
     pd.DataFrame(comp_rows).to_csv(
-        os.path.join(RESULTS_DIR, "setting_b_train_composition_no_augment.csv"),
-        index=False,
+        os.path.join(res_dir, f"setting_b_no_augment{sfx}_train_composition.csv"), index=False
     )
 
     logger.info("======== SETTING B (no augment): training set composition by ratio ========")

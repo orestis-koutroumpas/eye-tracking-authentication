@@ -16,6 +16,7 @@ Usage:
     python setting_b.py
 """
 
+import argparse
 import logging
 import os
 
@@ -34,7 +35,7 @@ from sklearn.svm import SVC, LinearSVC
 from load_data import load_dataset
 from utils.metrics import calculate_eer, evaluate_model
 from utils.plotting import (plot_feature_selection_frequency,
-                            plot_metric_vs_trainsize)
+                            plot_metric_vs_trainsize, results_path)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -267,9 +268,44 @@ def aggregate(results):
         rows.append(row)
     return pd.DataFrame(rows)
 
+def parse_args():
+    """Command-line options; the defaults reproduce the original run."""
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("--data-dir", default=DATA_FOLDER,
+                        help="dataset root containing genuine/ and impostors/")
+    parser.add_argument("--models", default=None,
+                        help='comma-separated get_models() keys, e.g. "MLP"')
+    parser.add_argument("--tag", default="",
+                        help="suffix added to every output file and plot folder")
+    parser.add_argument("--seeds", type=int, default=len(SEEDS),
+                        help="number of seeds, 0..N-1 (default: 100)")
+    parser.add_argument("--ratios", default=None,
+                        help='comma-separated train fractions, e.g. "0.7,0.1"')
+    return parser.parse_args()
+
+
+def select_models(models, names):
+    """Keep only the comma-separated model names (all models when empty)."""
+    if not names:
+        return models
+    wanted = [n.strip() for n in names.split(",")]
+    unknown = [n for n in wanted if n not in models]
+    if unknown:
+        raise SystemExit(f"Unknown model(s) {unknown}; choose from {list(models)}")
+    return {n: models[n] for n in wanted}
+
 
 def main():
-    models = get_models()
+    global DATA_FOLDER, SEEDS, TRAIN_FRACTIONS
+    args = parse_args()
+    DATA_FOLDER = args.data_dir
+    SEEDS = list(range(args.seeds))
+    if args.ratios:
+        TRAIN_FRACTIONS = [float(r) for r in args.ratios.split(",")]
+    sfx = f"_{args.tag}" if args.tag else ""
+    models = select_models(get_models(), args.models)
     logger.info(
         f"Setting B | ratios={[f'{int(f*100)}/{int((1-f)*100)}' for f in TRAIN_FRACTIONS]} "
         f"| models={list(models)} | seeds={len(SEEDS)}"
@@ -315,10 +351,10 @@ def main():
 
     results = pd.DataFrame(all_records)
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    results.to_csv(os.path.join(RESULTS_DIR, "setting_b_per_seed.csv"), index=False)
+    results.to_csv(os.path.join(RESULTS_DIR, f"setting_b{sfx}_per_seed.csv"), index=False)
 
     summary = aggregate(results)
-    summary.to_csv(os.path.join(RESULTS_DIR, "setting_b_summary.csv"), index=False)
+    summary.to_csv(os.path.join(RESULTS_DIR, f"setting_b{sfx}_summary.csv"), index=False)
 
     # Per-ratio training set composition (saved next to the metrics CSVs).
     n_aug = 1 + N_AUG_COPIES
@@ -337,7 +373,7 @@ def main():
             "total_after_aug": total * n_aug if ratio_aug[pct] else total,
         })
     pd.DataFrame(comp_rows).to_csv(
-        os.path.join(RESULTS_DIR, "setting_b_train_composition.csv"), index=False
+        os.path.join(RESULTS_DIR, f"setting_b{sfx}_train_composition.csv"), index=False
     )
 
     logger.info("======== SETTING B: training set composition by ratio ========")
@@ -371,11 +407,16 @@ def main():
         long["mean"] = summary[f"{metric}_mean"]
         long["ci_lo"] = summary[f"{metric}_ci_lo"]
         long["ci_hi"] = summary[f"{metric}_ci_hi"]
-        plot_metric_vs_trainsize(long, metric=metric, lower_better=(metric != "AUC"))
+        plot_metric_vs_trainsize(
+            long, metric=metric, lower_better=(metric != "AUC"),
+            save_path=results_path(f"setting_b{sfx}", f"{metric.lower()}_vs_trainsize.png"),
+        )
 
     # Feature-selection frequency heatmap (one per model): how often each
     # feature is picked by RFE across the 100 seeds, per training ratio.
-    plot_feature_selection_frequency(results)
+    plot_feature_selection_frequency(
+        results, save_path=results_path(f"setting_b{sfx}", "setting_b_features.png")
+    )
 
 
 if __name__ == "__main__":
