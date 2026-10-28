@@ -18,6 +18,7 @@ Usage:
     python setting_a.py
 """
 
+import argparse
 import logging
 import os
 from collections import defaultdict
@@ -228,9 +229,42 @@ def summarize(results: pd.DataFrame) -> pd.DataFrame:
         logger.info(f"    params      {row[('best_params', 'mode')]}")
     return summary
 
+def parse_args():
+    """Command-line options; the defaults reproduce the original run."""
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("--data-dir", default=DATA_FOLDER,
+                        help="dataset root containing genuine/ and impostors/")
+    parser.add_argument("--models", default=None,
+                        help='comma-separated get_models() keys, e.g. "MLP"')
+    parser.add_argument("--tag", default="",
+                        help="suffix added to every output file and plot folder")
+    parser.add_argument("--seeds", type=int, default=len(SEEDS),
+                        help="number of seeds, 0..N-1 (default: 100)")
+    return parser.parse_args()
+
+
+def select_models(models, names):
+    """Keep only the comma-separated model names (all models when empty)."""
+    if not names:
+        return models
+    wanted = [n.strip() for n in names.split(",")]
+    unknown = [n for n in wanted if n not in models]
+    if unknown:
+        raise SystemExit(f"Unknown model(s) {unknown}; choose from {list(models)}")
+    return {n: models[n] for n in wanted}
+
+
 
 def main():
-    models = get_models()
+    global DATA_FOLDER, SEEDS
+    args = parse_args()
+    DATA_FOLDER = args.data_dir
+    SEEDS = list(range(args.seeds))
+    sfx = f"_{args.tag}" if args.tag else ""
+    plots_subdir = PLOTS_SUBDIR + sfx
+    models = select_models(get_models(), args.models)
     logger.info(
         f"Setting A | seeds={len(SEEDS)} | models={list(models)} | "
         f"split={GEN_TRAIN_PCT:.0%}/{1 - GEN_TRAIN_PCT:.0%}"
@@ -247,12 +281,12 @@ def main():
     results = pd.DataFrame(all_records)
 
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    per_seed_path = os.path.join(RESULTS_DIR, "setting_a_per_seed.csv")
+    per_seed_path = os.path.join(RESULTS_DIR, f"setting_a{sfx}_per_seed.csv")
     results.to_csv(per_seed_path, index=False)
     logger.info(f"Saved per-seed results -> {per_seed_path}")
 
     summary = summarize(results)
-    summary_path = os.path.join(RESULTS_DIR, "setting_a_summary.csv")
+    summary_path = os.path.join(RESULTS_DIR, f"setting_a{sfx}_summary.csv")
     summary.to_csv(summary_path)
     logger.info(f"Saved summary -> {summary_path}")
 
@@ -272,23 +306,23 @@ def main():
         FAR_err=iqr_err("FAR"),
         FRR_err=iqr_err("FRR"),
         EER_err=iqr_err("EER"),
-        save_path=results_path(PLOTS_SUBDIR, "model_comparison.png"),
+        save_path=results_path(plots_subdir, "model_comparison.png"),
     )
 
     # Distribution of each metric across seeds (box + strip), one box per model.
     for metric in ["EER", "FAR", "FRR", "FAR_at_FRR1"]:
         plot_metric_distribution(
             results, metric=metric,
-            save_path=results_path(PLOTS_SUBDIR, f"{metric.lower()}_distribution.png"),
+            save_path=results_path(plots_subdir, f"{metric.lower()}_distribution.png"),
         )
     # AUC: higher is better and not floored at 0.
     plot_metric_distribution(
         results, metric="AUC", floor_zero=False, ascending=False,
-        save_path=results_path(PLOTS_SUBDIR, "auc_distribution.png"),
+        save_path=results_path(plots_subdir, "auc_distribution.png"),
     )
 
     # DET curves (FAR vs FRR trade-off), aggregated across seeds.
-    plot_det_curves(det_curves, save_path=results_path(PLOTS_SUBDIR, "det_curves.png"))
+    plot_det_curves(det_curves, save_path=results_path(plots_subdir, "det_curves.png"))
 
 
 if __name__ == "__main__":
