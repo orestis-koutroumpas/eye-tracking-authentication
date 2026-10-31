@@ -1,0 +1,3 @@
+blink id,start timestamp [ns],end timestamp [ns],duration [ms]
+1,3838542000,4103786000,265
+2,14248251000,14478515000,230
