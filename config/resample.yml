@@ -1,0 +1,13 @@
+# Option B downsampling (REVISION_TASKS.md, T3)
+frequencies: [200, 100, 50, 30]
+
+# D1: "aa" = anti-aliased (low-pass per segment, then grid), "pick" = grid only
+method: aa
+
+# D2: a fixation survives if its kept samples span >= 60 ms AND it has >= 2 samples
+min_fixation_ms: 60
+min_fixation_samples: 2
+
+# D3: centred moving-average window for the saccade peak velocity, in ms.
+# Set by: python -m preprocess.validate calibrate   (5 ms = 1 sample at 200 Hz = raw)
+peak_velocity_window_ms: 25

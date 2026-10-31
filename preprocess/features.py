@@ -92,7 +92,7 @@ def extract_features(data_dir: str) -> None:
 
     # Threshold for Screen/Keyboard
     Y = fixations["fixation y [px]"].values.reshape(-1, 1)
-    kmeans = KMeans(n_clusters=2, n_init=10)
+    kmeans = KMeans(n_clusters=2, n_init=10, random_state=0)
     labels = kmeans.fit_predict(Y)
 
     c1, c2 = kmeans.cluster_centers_.flatten()
