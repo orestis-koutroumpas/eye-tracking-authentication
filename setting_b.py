@@ -43,6 +43,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+import yaml
+
+with open("config/familiarity.yaml") as f:
+    keep_cols = yaml.safe_load(f)["keep_columns"]
+
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -182,6 +188,8 @@ def run_seed(seed, models, gen_pct, imp_pct, cv_splits, use_groups, augment=Fals
         DATA_FOLDER, gen_train_pct=gen_pct, imp_train_pct=imp_pct,
         random_state=seed, return_groups=True,
     )
+    X_train = X_train[keep_cols]
+    X_test  = X_test[keep_cols]
 
     # Augmentation (low-data ratios only), strictly after the split. Synthetic
     # rows are stacked into the training set and inner CV; the test set below is

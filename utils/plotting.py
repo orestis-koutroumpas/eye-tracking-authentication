@@ -15,6 +15,7 @@ the ``results/plots/`` tree and logs the saved path:
     # dataset EDA (saved under results/plots/eda/)
     plotting.plot_class_balance(df)
 """
+from __future__ import annotations
 
 import logging
 import os
@@ -25,11 +26,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from pathlib import Path
 from matplotlib.lines import Line2D
 from scipy.stats import norm
 from sklearn.decomposition import PCA
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.preprocessing import StandardScaler
+from statsmodels.nonparametric.smoothers_lowess import lowess
+
 
 # Configure logger
 logging.basicConfig(
@@ -958,3 +962,175 @@ def plot_correlation_heatmap(data, features, save_path=None):
     sns.heatmap(corr, cmap="coolwarm", center=0, square=True, cbar_kws={"label": "corr"})
     plt.title("Feature correlation")
     _save(save_path)
+
+def plot_pvalue_hist(res, alpha, out_dir):
+    """Histogram of raw p-values: a spike near 0 means real familiarity effects."""
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(res["p_value"].dropna(), bins=20, edgecolor="black")
+    ax.axvline(alpha, color="red", ls="--", label=f"alpha = {alpha}")
+    ax.set_xlabel("raw p-value"); ax.set_ylabel("number of features")
+    ax.set_title("p-value distribution across all features")
+    ax.legend(); fig.tight_layout()
+    fig.savefig(Path(out_dir) / "pvalue_histogram.png", dpi=150)
+    return fig
+
+
+def plot_volcano(res, alpha, out_dir, n_labels=8):
+    """Effect size (standardized slope) vs significance (-log10 q_BH)."""
+    r = res.dropna(subset=["q_bh", "std_slope_per_attempt"]).copy()
+    r["neglog10_q"] = -np.log10(r["q_bh"].clip(lower=1e-300))
+    sig = r["familiarity_significant"]
+
+    fig, ax = plt.subplots(figsize=(7.5, 5.5))
+    ax.scatter(r.loc[~sig, "std_slope_per_attempt"], r.loc[~sig, "neglog10_q"],
+               s=18, alpha=0.5, color="grey", label="not significant")
+    ax.scatter(r.loc[sig, "std_slope_per_attempt"], r.loc[sig, "neglog10_q"],
+               s=28, color="crimson", label=f"q_BH < {alpha}")
+    ax.axhline(-np.log10(alpha), color="black", ls="--", lw=0.8)
+    ax.axvline(0, color="black", lw=0.8)
+    for _, row in r.loc[sig].nlargest(n_labels, "neglog10_q").iterrows():
+        ax.annotate(row["feature"], (row["std_slope_per_attempt"], row["neglog10_q"]),
+                    fontsize=7, xytext=(3, 3), textcoords="offset points")
+    ax.set_xlabel("standardized slope per attempt (SD units;  < 0 decreasing,  > 0 increasing)")
+    ax.set_ylabel("-log10(q_BH)")
+    ax.set_title("Familiarity effect: effect size vs significance")
+    ax.legend(); fig.tight_layout()
+    fig.savefig(Path(out_dir) / "volcano_familiarity.png", dpi=150)
+    return fig
+
+
+def plot_significant_bar(res, out_dir):
+    """Significant features sorted by standardized slope, coloured by direction."""
+    sigdf = res.loc[res["familiarity_significant"]].sort_values("std_slope_per_attempt")
+    if sigdf.empty:
+        print("No features reached significance: bar chart skipped.")
+        return None
+    colors = ["#1f77b4" if s < 0 else "#d62728" for s in sigdf["std_slope_per_attempt"]]
+    fig, ax = plt.subplots(figsize=(7.5, max(3, 0.32 * len(sigdf))))
+    ax.barh(sigdf["feature"], sigdf["std_slope_per_attempt"], color=colors)
+    ax.axvline(0, color="black", lw=0.8)
+    ax.set_xlabel("standardized slope per attempt (SD units)")
+    ax.set_title(f"{len(sigdf)} features with significant familiarity drift"
+                 "\n(blue = decreases with practice, red = increases)")
+    fig.tight_layout()
+    fig.savefig(Path(out_dir) / "significant_slopes_bar.png", dpi=150)
+    return fig
+
+
+def plot_top_trends(res, data, out_dir, n_top=9):
+    """Scatter of the strongest features over attempts, with linear + lowess fits."""
+    top = res.loc[res["familiarity_significant"]].nsmallest(n_top, "q_bh")["feature"].tolist()
+    if not top:
+        print("No significant features: trend grid skipped.")
+        return None
+    ncol = 3
+    nrow = int(np.ceil(len(top) / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(4 * ncol, 3 * nrow), squeeze=False)
+    for ax, feat in zip(axes.ravel(), top):
+        sub = data[["attempt", feat]].dropna().sort_values("attempt")
+        ax.scatter(sub["attempt"], sub[feat], s=12, alpha=0.6)
+        b = np.polyfit(sub["attempt"], sub[feat], 1)
+        xs = np.linspace(sub["attempt"].min(), sub["attempt"].max(), 100)
+        ax.plot(xs, np.polyval(b, xs), color="crimson", lw=1.5, label="linear")
+        lo = lowess(sub[feat], sub["attempt"], frac=0.5)
+        ax.plot(lo[:, 0], lo[:, 1], color="green", lw=1.2, ls="--", label="lowess")
+        q = res.loc[res["feature"] == feat, "q_bh"].iloc[0]
+        ax.set_title(f"{feat}\nq_BH = {q:.3g}", fontsize=8)
+        ax.set_xlabel("attempt"); ax.tick_params(labelsize=7)
+    axes.ravel()[0].legend(fontsize=7)
+    for ax in axes.ravel()[len(top):]:
+        ax.axis("off")
+    fig.suptitle("Trends of the most significant features over attempts", y=1.01)
+    fig.tight_layout()
+    fig.savefig(Path(out_dir) / "top_feature_trends.png", dpi=150, bbox_inches="tight")
+    return fig
+
+
+def plot_familiar_vs_stable(res, data, out_dir, n_each=3):
+    """Side-by-side trends of familiarity-affected (drifting) vs stable features.
+
+    Top row: the strongest drifting features (dropped). Bottom row: the most
+    stable features (kept, largest p). Each panel shows the feature over attempts
+    with its linear trend, so the contrast sits on the same attempt axis.
+    """
+    drifting = res.loc[res["familiarity_significant"]].nsmallest(n_each, "q_bh")["feature"].tolist()
+    stable = res.loc[~res["familiarity_significant"]].nlargest(n_each, "p_value")["feature"].tolist()
+    if not drifting and not stable:
+        print("Nothing to compare: no features available.")
+        return None
+    ncol = max(len(drifting), len(stable), 1)
+    fig, axes = plt.subplots(2, ncol, figsize=(4 * ncol, 6), squeeze=False)
+
+    def _panel(ax, feat, color, tag):
+        if feat is None:
+            ax.axis("off"); return
+        sub = data[["attempt", feat]].dropna().sort_values("attempt")
+        ax.scatter(sub["attempt"], sub[feat], s=12, alpha=0.6)
+        b = np.polyfit(sub["attempt"], sub[feat], 1)
+        xs = np.linspace(sub["attempt"].min(), sub["attempt"].max(), 100)
+        ax.plot(xs, np.polyval(b, xs), color=color, lw=1.5)
+        q = res.loc[res["feature"] == feat, "q_bh"].iloc[0]
+        ax.set_title(f"{tag}\n{feat}\nq_BH = {q:.3g}", fontsize=8)
+        ax.set_xlabel("attempt"); ax.tick_params(labelsize=7)
+
+    for j in range(ncol):
+        _panel(axes[0][j], drifting[j] if j < len(drifting) else None,
+               "crimson", "familiarity-affected (dropped)")
+        _panel(axes[1][j], stable[j] if j < len(stable) else None,
+               "#22aa77", "stable (kept)")
+    fig.suptitle("Familiarity-affected vs stable features over attempts", y=1.02)
+    fig.tight_layout()
+    fig.savefig(Path(out_dir) / "familiar_vs_stable.png", dpi=150, bbox_inches="tight")
+    return fig
+
+
+def plot_correlation_hist(res, out_dir):
+    """Distribution of each feature's Spearman correlation with the trial index.
+
+    Shows how many features relate to trial number and how strongly. A mass piled
+    away from 0 means many features drift with practice; a peak at 0 means few do.
+    """
+    rho = res["spearman_rho"].dropna()
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(rho, bins=21, edgecolor="black")
+    ax.axvline(0, color="black", lw=0.8)
+    ax.set_xlabel("Spearman correlation with trial number")
+    ax.set_ylabel("number of features")
+    ax.set_title("Feature-trial correlation across all features")
+    fig.tight_layout()
+    fig.savefig(Path(out_dir) / "trial_correlation_hist.png", dpi=150)
+    return fig
+
+
+def plot_trial_correlation_bar(res, out_dir, top_n=30):
+    """Features most correlated with trial number (Spearman), coloured by significance.
+
+    Red = significant familiarity drift (q_BH < 0.05, dropped); grey = kept.
+    Shows the top ``top_n`` features by absolute correlation to stay readable.
+    """
+    r = res.dropna(subset=["spearman_rho"]).copy()
+    r = r.reindex(r["spearman_rho"].abs().sort_values(ascending=False).index)
+    r = r.head(top_n).sort_values("spearman_rho")
+    colors = ["crimson" if s else "grey" for s in r["familiarity_significant"]]
+    fig, ax = plt.subplots(figsize=(7.5, max(3, 0.32 * len(r))))
+    ax.barh(r["feature"], r["spearman_rho"], color=colors)
+    ax.axvline(0, color="black", lw=0.8)
+    ax.set_xlabel("Spearman correlation with trial number")
+    ax.set_title(f"Top {len(r)} features by |correlation| with trial"
+                 "\n(red = significant familiarity drift q_BH<0.05, grey = kept)")
+    fig.tight_layout()
+    fig.savefig(Path(out_dir) / "trial_correlation_bar.png", dpi=150)
+    return fig
+
+
+def make_all_plots(res, data, alpha, out_dir):
+    """Always generate and save every figure."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    plot_pvalue_hist(res, alpha, out_dir)
+    plot_volcano(res, alpha, out_dir)
+    plot_significant_bar(res, out_dir)
+    plot_top_trends(res, data, out_dir)
+    plot_familiar_vs_stable(res, data, out_dir)
+    plot_correlation_hist(res, out_dir)
+    plot_trial_correlation_bar(res, out_dir)

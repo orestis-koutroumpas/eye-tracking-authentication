@@ -45,6 +45,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+import yaml
+
+with open("config/familiarity.yaml") as f:
+    keep_cols = yaml.safe_load(f)["keep_columns"]
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -136,6 +141,8 @@ def run_seed(seed, models):
         random_state=seed,
         return_groups=True,
     )
+    X_train = X_train[keep_cols]
+    X_test  = X_test[keep_cols]
     
     cv = StratifiedGroupKFold(n_splits=CV_SPLITS, shuffle=True, random_state=seed)
     fit_groups = groups_train

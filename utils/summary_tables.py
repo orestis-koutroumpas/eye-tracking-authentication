@@ -80,7 +80,7 @@ def build_setting_a_table():
     setting_a_summary.csv has a two-row (metric, stat) column header and the
     model name as the index; rows are pre-sorted by EER mean (best first).
     """
-    path = os.path.join(METRICS_DIR, "setting_a_summary.csv")
+    path = os.path.join(METRICS_DIR, "setting_a_famil_effect_summary.csv")
     df = pd.read_csv(path, header=[0, 1], index_col=0)
     has_params = ("best_params", "mode") in df.columns
 
@@ -109,7 +109,7 @@ def build_setting_b_tables():
     <METRIC>_mean / _ci_lo / _ci_hi columns. Train fractions are shown largest
     first so the tables read from most to least training data.
     """
-    path = os.path.join(METRICS_DIR, "setting_b_summary.csv")
+    path = os.path.join(METRICS_DIR, "setting_b_fam_effect_summary.csv")
     df = pd.read_csv(path)
 
     models = list(dict.fromkeys(df["model"]))  # order of first appearance
@@ -248,8 +248,8 @@ def _write(name, content):
 
 
 def main():
-    _write("setting_a_summary.md", build_setting_a_table())
-    _write("setting_b_summary.md", build_setting_b_tables())
+    _write("setting_a_famil_effect_summary.md", build_setting_a_table())
+    _write("setting_b_famil_effect_summary.md", build_setting_b_tables())
     _write("setting_b_train_composition.md", build_setting_b_composition_table())
 
     comparison = build_augment_comparison_table()

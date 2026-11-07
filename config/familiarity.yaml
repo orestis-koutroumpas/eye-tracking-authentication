@@ -1,0 +1,126 @@
+meta:
+  n_sessions: 119
+  n_persons: 1
+  n_features_tested: 113
+  alpha: 0.05
+  n_dropped: 56
+  n_kept: 57
+  n_dropped_by: 47
+  model: OLS
+  method: OLS trend feature~attempt; Benjamini-Hochberg FDR; drop q<alpha
+  selection_is_label_free: true
+keep_columns:
+- screen_time_s
+- keyboard_fixations_per_s
+- median_distance_from_previous_px
+- kurtosis_distance_from_previous_px
+- mad_distance_from_previous_px
+- median_angle_from_previous_rad
+- skew_angle_from_previous_rad
+- kurtosis_angle_from_previous_rad
+- cv_angle_from_previous_rad
+- mad_angle_from_previous_rad
+- median_time_since_previous_s
+- skew_time_since_previous_s
+- kurtosis_time_since_previous_s
+- median_dispersion_px
+- mad_dispersion_px
+- skew_saccade_duration_s
+- kurtosis_saccade_duration_s
+- cv_saccade_duration_s
+- mad_saccade_duration_s
+- kurtosis_amplitude_px
+- mad_amplitude_px
+- kurtosis_amplitude_deg
+- mad_amplitude_deg
+- median_mean_velocity_px_s
+- kurtosis_mean_velocity_px_s
+- median_peak_velocity_px_s
+- kurtosis_peak_velocity_px_s
+- skew_main_sequence_ratio
+- kurtosis_main_sequence_ratio
+- cv_main_sequence_ratio
+- skew_Q_ratio
+- kurtosis_Q_ratio
+- cv_Q_ratio
+- skew_blink_duration_s
+- kurtosis_blink_duration_s
+- cv_blink_duration_s
+- mad_blink_duration_s
+- median_pupil_diameter_left_mm
+- skew_pupil_diameter_left_mm
+- kurtosis_pupil_diameter_left_mm
+- cv_pupil_diameter_left_mm
+- mad_pupil_diameter_left_mm
+- skew_pupil_diameter_right_mm
+- kurtosis_pupil_diameter_right_mm
+- cv_pupil_diameter_right_mm
+- mad_eyelid_angle_top_left
+- kurtosis_eyelid_angle_bottom_left
+- mad_eyelid_angle_bottom_left
+- cv_eyelid_angle_top_right
+- skew_eyelid_angle_bottom_right
+- kurtosis_eyelid_angle_bottom_right
+- mad_eyelid_angle_bottom_right
+- median_eyelid_aperture_right_mm
+- median_distance_between_pupils_center_mm
+- skew_distance_between_pupils_center_mm
+- kurtosis_distance_between_pupils_center_mm
+- mad_distance_between_pupils_center_mm
+drop_columns:
+- cv_time_since_previous_s
+- median_eyelid_angle_bottom_right
+- median_eyelid_angle_bottom_left
+- cv_mean_velocity_px_s
+- mad_mean_velocity_px_s
+- saccades_per_s
+- median_eyelid_angle_top_left
+- kurtosis_eyelid_angle_top_left
+- median_pupil_diameter_right_mm
+- cv_amplitude_px
+- cv_amplitude_deg
+- cv_peak_velocity_px_s
+- median_eyelid_angle_top_right
+- path_length_px
+- skew_eyelid_aperture_right_mm
+- kurtosis_eyelid_aperture_right_mm
+- mad_time_since_previous_s
+- skew_eyelid_angle_top_left
+- blinks_per_s
+- mad_main_sequence_ratio
+- skew_eyelid_angle_top_right
+- kurtosis_eyelid_angle_top_right
+- median_eyelid_aperture_left_mm
+- skew_mean_velocity_px_s
+- cv_distance_from_previous_px
+- kurtosis_eyelid_aperture_left_mm
+- cv_dispersion_px
+- screen_fixations_per_s
+- cv_eyelid_angle_bottom_right
+- kurtosis_dispersion_px
+- skew_eyelid_aperture_left_mm
+- mad_eyelid_angle_top_right
+- mad_eyelid_aperture_left_mm
+- mad_eyelid_aperture_right_mm
+- cv_eyelid_aperture_right_mm
+- skew_amplitude_px
+- cv_eyelid_angle_top_left
+- cv_distance_between_pupils_center_mm
+- skew_amplitude_deg
+- median_Q_ratio
+- median_main_sequence_ratio
+- skew_dispersion_px
+- cv_eyelid_angle_bottom_left
+- mad_pupil_diameter_right_mm
+- cv_eyelid_aperture_left_mm
+- skew_peak_velocity_px_s
+- skew_distance_from_previous_px
+- median_blink_duration_s
+- median_saccade_duration_s
+- transitions_per_s
+- mad_Q_ratio
+- mad_peak_velocity_px_s
+- keyboard_time_s
+- median_amplitude_px
+- median_amplitude_deg
+- skew_eyelid_angle_bottom_left
