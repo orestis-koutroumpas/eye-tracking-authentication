@@ -109,7 +109,7 @@ def build_setting_b_tables():
     <METRIC>_mean / _ci_lo / _ci_hi columns. Train fractions are shown largest
     first so the tables read from most to least training data.
     """
-    path = os.path.join(METRICS_DIR, "setting_b_fam_effect_summary.csv")
+    path = os.path.join(METRICS_DIR, "setting_b_summary.csv")
     df = pd.read_csv(path)
 
     models = list(dict.fromkeys(df["model"]))  # order of first appearance
@@ -248,8 +248,8 @@ def _write(name, content):
 
 
 def main():
-    _write("setting_a_famil_effect_summary.md", build_setting_a_table())
-    _write("setting_b_famil_effect_with_less_cols_summary.md", build_setting_b_tables())
+    _write("setting_a_summary.md", build_setting_a_table())
+    _write("setting_b_summary.md", build_setting_b_tables())
     _write("setting_b_train_composition.md", build_setting_b_composition_table())
 
     comparison = build_augment_comparison_table()
