@@ -188,7 +188,7 @@ def build_augment_comparison_table():
     Δ EER = aug − no_aug: negative means augmentation helped (lower EER),
     positive means it hurt.
     """
-    aug_path = os.path.join(METRICS_DIR, "setting_b_summary.csv")
+    aug_path = os.path.join(METRICS_DIR, "comparison/setting_b_fam_comparison_summary.csv")
     no_aug_path = os.path.join(METRICS_DIR, "setting_b_no_augment_summary.csv")
 
     if not os.path.exists(aug_path) or not os.path.exists(no_aug_path):
@@ -249,7 +249,7 @@ def _write(name, content):
 
 def main():
     _write("setting_a_famil_effect_summary.md", build_setting_a_table())
-    _write("setting_b_famil_effect_summary.md", build_setting_b_tables())
+    _write("setting_b_famil_effect_with_less_cols_summary.md", build_setting_b_tables())
     _write("setting_b_train_composition.md", build_setting_b_composition_table())
 
     comparison = build_augment_comparison_table()

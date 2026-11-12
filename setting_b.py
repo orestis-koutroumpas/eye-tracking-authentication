@@ -54,7 +54,7 @@ with open("config/familiarity.yaml") as f:
 # ---------------------------------------------------------------------------
 DATA_FOLDER = "data"
 BASE_CV = 5               # inner CV folds (reduced per ratio when data is scarce)
-K_GRID = [10, 20, 40, 80]   # RFE n_features_to_select
+K_GRID = [10, 20, 40, 44]   # RFE n_features_to_select
 TRAIN_FRACTIONS = [0.7, 0.6, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1]
 # Train ratios at or below this threshold get Gaussian-noise augmentation, i.e.
 # the low-data regime (30% train and below), as reported in the paper.
@@ -66,7 +66,7 @@ N_AUG_COPIES = 3
 AUG_NOISE_SCALE = 0.005   # noise std = AUG_NOISE_SCALE * per-feature class std
 SEEDS = list(range(100))
 METRICS = ["EER", "FAR", "FRR", "AUC", "FAR_at_FRR1"]
-RESULTS_DIR = "results/metrics"
+RESULTS_DIR = "results/metrics/comparison"
 
 # EER must be scored on continuous scores; predict_proba where available, else
 # decision_function (LinearSVC / RBF SVM without probability=True).

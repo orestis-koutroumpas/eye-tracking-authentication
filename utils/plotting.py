@@ -1123,6 +1123,46 @@ def plot_trial_correlation_bar(res, out_dir, top_n=30):
     return fig
 
 
+_UNIT_TOKENS = {"s", "px", "mm", "rad", "deg", "ms", "hz"}
+
+
+def _pretty_label(name):
+    """De-underscore a feature name for axis labels, drop trailing units, upper acronyms."""
+    s = name[:-6] + "_rate" if name.endswith("_per_s") else name
+    s = s.replace("_", " ")
+    toks = s.split()
+    while len(toks) > 1 and toks[-1].lower() in _UNIT_TOKENS:  # strip trailing units
+        toks.pop()
+    s = " ".join(toks)
+    for a in ("cv", "mad", "rms", "auc", "eer"):
+        s = re.sub(rf"\b{a}\b", a.upper(), s)
+    return s[0].upper() + s[1:] if s else s
+
+
+def plot_top_abs_slope(res, out_dir, n=10, title="Features most affected by familiarity"):
+    """Horizontal bar of the n features with the largest |standardized slope|.
+
+    A legend maps blue to decreasing and red to increasing; axis labels are
+    de-underscored with trailing units removed.
+    """
+    from matplotlib.patches import Patch
+    r = res.dropna(subset=["std_slope_per_attempt"]).copy()
+    r = r.reindex(r["std_slope_per_attempt"].abs().sort_values().index).tail(n)
+    labels = [_pretty_label(f) for f in r["feature"]]
+    vals = r["std_slope_per_attempt"].to_list()
+    colors = ["#1f77b4" if v < 0 else "#d62728" for v in vals]
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.barh(labels, vals, color=colors)
+    ax.axvline(0, color="black", lw=0.8)
+    ax.set_xlabel("standardized slope per attempt (SD units)")
+    ax.set_title(title)
+    ax.legend(handles=[Patch(color="#1f77b4", label="decreasing"),
+                       Patch(color="#d62728", label="increasing")],
+              loc="upper right", frameon=True)
+    fig.tight_layout()
+    fig.savefig(Path(out_dir) / "top10_familiarity_slopes.png", dpi=150)
+    return fig
+
 def make_all_plots(res, data, alpha, out_dir):
     """Always generate and save every figure."""
     out_dir = Path(out_dir)
@@ -1130,6 +1170,7 @@ def make_all_plots(res, data, alpha, out_dir):
     plot_pvalue_hist(res, alpha, out_dir)
     plot_volcano(res, alpha, out_dir)
     plot_significant_bar(res, out_dir)
+    plot_top_abs_slope(res, out_dir)
     plot_top_trends(res, data, out_dir)
     plot_familiar_vs_stable(res, data, out_dir)
     plot_correlation_hist(res, out_dir)
