@@ -10,7 +10,7 @@ code (extract_features + aggregate_recording) produces ``agg_session.csv``.
 The source folder is only read, never modified.
 
 Usage:
-    python resample_data.py --src data --out data_resampled --freqs 200 100 50 30
+    python downsample/resample_data.py --src data --out data_resampled --freqs 200 100 50 30
 """
 
 import argparse
@@ -23,7 +23,7 @@ import yaml
 
 from preprocess.features import aggregate_recording, extract_features
 from preprocess.rebuild import rebuild_events
-from preprocess.resample import device_clock, resample_stream
+from downsample.resample import device_clock, resample_stream
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

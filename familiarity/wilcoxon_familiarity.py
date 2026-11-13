@@ -1,4 +1,7 @@
-"""Wilcoxon signed-rank significance: baseline vs familiarity-reduced per-seed results."""
+"""Wilcoxon signed-rank significance: baseline vs familiarity-reduced per-seed results.
+
+    python familiarity/wilcoxon_familiarity.py
+"""
 
 from __future__ import annotations
 

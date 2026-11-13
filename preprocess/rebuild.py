@@ -36,7 +36,7 @@ Importable helper (driven by resample_data.py and preprocess/validate.py):
 import numpy as np
 import pandas as pd
 
-from preprocess.resample import GAP_NS, TS, grid_time, positions, snap_up
+from downsample.resample import GAP_NS, TS, grid_time, positions, snap_up
 
 GX, GY, AZ, EL = "gaze x [px]", "gaze y [px]", "azimuth [deg]", "elevation [deg]"
 START, END, DUR = "start timestamp [ns]", "end timestamp [ns]", "duration [ms]"

@@ -12,7 +12,7 @@ Paired tests: Wilcoxon signed-rank on per-seed EER, each frequency vs the
 200 Hz Option-B baseline, per model (same seeds = same splits).
 
 Usage:
-    python utils/frequency_tables.py --freqs 200 100 50 30 --ratios 70 30 15 10
+    python downsample/frequency_tables.py --freqs 200 100 50 30 --ratios 70 30 15 10
 """
 
 import argparse

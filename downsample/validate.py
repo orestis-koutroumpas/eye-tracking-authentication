@@ -14,8 +14,8 @@ Calibrate and validate the Option-B rebuild against the published 200 Hz data (T
 Neither step uses genuine/impostor labels or any classification result.
 
 Usage:
-    python -m preprocess.validate calibrate --src data --write
-    python -m preprocess.validate equivalence --src data --resampled data_resampled/200hz
+    python -m downsample.validate calibrate --src data --write
+    python -m downsample.validate equivalence --src data --resampled data_resampled/200hz
 """
 
 import argparse
@@ -28,7 +28,7 @@ import yaml
 from scipy.stats import pearsonr, spearmanr
 
 from preprocess.rebuild import START, END, rebuild_events
-from preprocess.resample import device_clock
+from downsample.resample import device_clock
 from resample_data import GAZE_COLS, recordings
 
 WINDOWS_MS = [5, 10, 15, 20, 25, 30, 40]   # 5 ms = one 200 Hz sample = raw velocity

@@ -15,8 +15,7 @@ Usage
     out = fe.run_pipeline(data_root="data/genuine", out_dir="results/familiarity")
 
 or::
-
-    python familiarity_effect.py --data-root data/genuine --out results/familiarity
+    python familiarity/familiarity_effect.py --data-root data/genuine --out results/familiarity
 """
 
 from __future__ import annotations

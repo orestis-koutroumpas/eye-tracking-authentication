@@ -23,7 +23,7 @@ row keeps the labels of the original sample. At 200 Hz the input is returned
 unchanged.
 
 Importable helper (driven by resample_data.py):
-    from preprocess.resample import resample_stream
+    from downsample.resample import resample_stream
 
     gaze_50 = resample_stream(gaze, 50, method="aa")
 """

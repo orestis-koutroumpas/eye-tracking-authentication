@@ -7,7 +7,7 @@ peak velocity, and features that became constant. Writes
 results/tables/resample_checks.md.
 
 Usage:
-    python utils/resample_checks.py --src data --resampled data_resampled --freqs 200 100 50 30
+    python downsample/resample_checks.py --src data --resampled data_resampled --freqs 200 100 50 30
 """
 
 import argparse
