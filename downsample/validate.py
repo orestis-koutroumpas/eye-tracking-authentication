@@ -1,5 +1,5 @@
 """
-Calibrate and validate the Option-B rebuild against the published 200 Hz data (T3.4).
+Calibrate and validate the Option-B rebuild against the published 200 Hz data.
 
   calibrate   : on a fixed subset of recordings (20 genuine + 20 impostor,
                 fixed seed), rebuild the saccades at 200 Hz with several

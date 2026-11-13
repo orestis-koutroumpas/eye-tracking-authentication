@@ -1,5 +1,5 @@
 """
-Compare the results across sampling frequencies (T3.8).
+Compare the results across sampling frequencies.
 
 Reads the tagged per-frequency outputs of setting_a.py / setting_b.py
 (``setting_a_<f>hz_*.csv``, ``setting_b_<f>hz_*.csv``) and the published
@@ -20,10 +20,10 @@ import os
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
-from scipy.stats import wilcoxon  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy.stats import wilcoxon
 
 METRICS = {"EER": "EER", "FAR_at_FRR1": "FAR@FRR=1%", "AUC": "AUC"}
 

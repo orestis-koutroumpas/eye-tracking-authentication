@@ -1,5 +1,5 @@
 """
-Compare two per-seed result files on their common (seed, model[, train_pct]) rows (T1.2).
+Compare two per-seed result files on their common (seed, model[, train_pct]) rows.
 
 Prints the largest absolute EER difference per model; 0.00 everywhere means
 the two runs are identical (same code, same data, same splits).

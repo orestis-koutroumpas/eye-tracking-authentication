@@ -1,5 +1,5 @@
 """
-Collect every MLP number the paper needs into one Markdown file (T2.7).
+Collect every MLP number the paper needs into one Markdown file.
 
 Reads the merged CSVs (after utils/merge_results.py) and writes
 ``results/tables/mlp_report.md`` with:

@@ -1,5 +1,5 @@
 """
-Build one feature dataset per sampling frequency (T3.5, Option B).
+Build one feature dataset per sampling frequency.
 
 For every recording in ``--src`` (genuine/<session>/ and
 impostors/<user>/<session>/) and every frequency, the 200 Hz gaze and

@@ -1,5 +1,5 @@
 """
-Downsample the 200 Hz sample streams of one recording (T3.2).
+Downsample the 200 Hz sample streams of one recording.
 
 `resample_stream` takes a processed ``gaze.csv`` or ``3d_eye_states.csv``
 table and returns the rows a tracker running at ``target_hz`` would have

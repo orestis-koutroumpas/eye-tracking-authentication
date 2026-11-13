@@ -44,7 +44,7 @@ def bootstrap_median_ci(diff, n_boot=10000, seed=0):
 def rank_biserial(diff):
     d = np.asarray(diff, float)
     d = d[(~np.isnan(d)) & (d != 0)]
-    if d.size == 0:                                   # FIX: was `!= 0`
+    if d.size == 0:                                  
         return 0.0
     ranks = pd.Series(np.abs(d)).rank().to_numpy()
     return float((ranks[d > 0].sum() - ranks[d < 0].sum()) / ranks.sum())
@@ -54,7 +54,7 @@ def compute(baseline_csv, reduced_csv, models, ratios, metrics, alternative, n_b
     baseline = pd.read_csv(baseline_csv)
     reduced = pd.read_csv(reduced_csv)
     for name, df in [("baseline", baseline), ("reduced", reduced)]:
-        dup = df.duplicated(KEYS).sum()               # FIX: was `.duplicate`
+        dup = df.duplicated(KEYS).sum()
         if dup:
             raise ValueError(f"{name}: {dup} duplicate rows on {KEYS}")
     m = baseline.merge(reduced, on=KEYS, suffixes=("_baseline", "_reduced"), validate="one_to_one")
@@ -99,9 +99,7 @@ def compute(baseline_csv, reduced_csv, models, ratios, metrics, alternative, n_b
     return res, n_seeds, sorted(m.model.unique())
 
 
-# --------------------------------------------------------------------------- #
 # Markdown output
-# --------------------------------------------------------------------------- #
 def _num(x, d=3, signed=False):
     if pd.isna(x):
         return "–"
@@ -157,7 +155,7 @@ def to_markdown(res: pd.DataFrame, n_seeds: int, title: str, multi_model: bool =
                 _num(r["rank_biserial"], signed=True),
                 _num(r["W"], 1),
                 _pval(r["p_value"]), _pval(r["q_bh"]),
-                "✔" if r["significant"] else "",
+                "Yes" if r["significant"] else "No",
             ]
             rows.append(row)
         return _md_table(headers, rows, align)

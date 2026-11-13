@@ -1,5 +1,5 @@
 """
-Sanity checks of the downsampled datasets (T3.6).
+Sanity checks of the downsampled datasets.
 
 Per frequency: effective sampling rate, events per second, share of vendor
 fixations dropped and saccades merged, mean fixation duration, median saccade

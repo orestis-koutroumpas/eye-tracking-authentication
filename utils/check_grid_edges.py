@@ -1,5 +1,5 @@
 """
-Pilot check of the MLP search space (T2.3): edge choices, ties, convergence.
+Pilot check of the MLP search space: edge choices, ties, convergence.
 
 Reads a per-seed CSV written by setting_a.py / setting_b.py (with the
 ``mlp_n_iter`` and ``n_tied_best`` columns) and prints, per training ratio:
