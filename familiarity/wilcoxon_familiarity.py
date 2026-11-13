@@ -1,5 +1,5 @@
 """Wilcoxon signed-rank significance: baseline vs familiarity-reduced per-seed results.
-
+    Usage:
     python familiarity/wilcoxon_familiarity.py
 """
 
